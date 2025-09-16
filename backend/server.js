@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const gameRoutes = require('./routes/gameRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -21,6 +22,7 @@ mongoose.connect(process.env.MONGODB_URI).then(() => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

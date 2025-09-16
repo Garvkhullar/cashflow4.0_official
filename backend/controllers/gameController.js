@@ -1,3 +1,37 @@
+// Global market mode state
+let marketMode = 'normal'; // 'bull', 'bear', 'normal'
+
+exports.setMarketMode = async (req, res) => {
+  try {
+    const { mode } = req.body;
+    if (!['bull', 'bear', 'bull-stop', 'bear-stop'].includes(mode)) {
+      return res.status(400).json({ message: 'Invalid market mode.' });
+    }
+    if (mode === 'bull') marketMode = 'bull';
+    else if (mode === 'bear') marketMode = 'bear';
+    else marketMode = 'normal';
+
+    // Update all teams' payday/interest rates
+    const teams = await Team.find({});
+    for (const team of teams) {
+      if (marketMode === 'bull') {
+        team.paydayMultiplier = 1.25;
+        team.loanInterestRate = 0.07;
+      } else if (marketMode === 'bear') {
+        team.paydayMultiplier = 0.75;
+        team.loanInterestRate = 0.18;
+      } else {
+        team.paydayMultiplier = 1.0;
+        team.loanInterestRate = 0.13;
+      }
+      await team.save();
+    }
+    res.status(200).json({ message: `Market mode set to ${marketMode}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 const mongoose = require('mongoose');
 const Team = require('../models/Team');
 const Deal = require('../models/Deal');
@@ -40,38 +74,71 @@ exports.handlePayday = async (req, res) => {
       return res.status(404).json({ message: 'Team not found' });
     }
 
-    const totalIncome = teamState.income + teamState.passiveIncome;
-    const totalExpenses = teamState.expenses + (teamState.personalLoan * teamState.loanInterestRate) + (teamState.smallDealLoan * 0.05) + (teamState.bigDealLoan * 0.10);
+  // Always reset expenses to base value before adding EMI/loan charges
+  const baseExpenses = 300000;
+  teamState.expenses = baseExpenses;
 
-    if (teamState.isAssetsFrozen) {
-        if (teamState.paydayFrozenTurn === 0) {
-            if (totalExpenses > teamState.cash) {
-                const loanNeeded = teamState.assets;
-                teamState.personalLoan += loanNeeded;
-                teamState.cash += loanNeeded;
-                addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets are frozen. Expenses exceed cash. Forced to take a loan of ${loanNeeded} to cover expenses.`);
-            }
-            teamState.cash -= totalExpenses;
-            teamState.paydayFrozenTurn = 1;
-            addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets are frozen. Payday income is zero. Expenses have been deducted.`);
-        } else {
-            teamState.isAssetsFrozen = false;
-            teamState.paydayFrozenTurn = 0;
-            const netPaydayIncome = totalIncome - totalExpenses;
-            teamState.cash += netPaydayIncome;
-            addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets are no longer frozen. Your net payday is ${netPaydayIncome}.`);
+  // Apply market mode payday multiplier
+  const paydayMultiplier = teamState.paydayMultiplier || 1.0;
+
+    // Process EMIs for small deals
+    let emiExpenseTotal = 0;
+    if (teamState.smallDealEmis && Array.isArray(teamState.smallDealEmis)) {
+      let totalSmallEmiPaid = 0;
+      teamState.smallDealEmis = teamState.smallDealEmis.filter(emiObj => {
+        if (emiObj.installmentsLeft > 0 && emiObj.totalLoan > 0) {
+          emiObj.totalLoan -= emiObj.emi;
+          emiObj.installmentsLeft -= 1;
+          if (emiObj.totalLoan < 0) emiObj.totalLoan = 0;
+          totalSmallEmiPaid += emiObj.emi;
+          emiExpenseTotal += (emiObj.totalLoan * 0.10) + emiObj.emi;
+          addLogEntry(teamState.tableId, `Small Deal EMI paid: ${emiObj.emi.toFixed(2)}. Remaining loan: ${emiObj.totalLoan.toFixed(2)}. Installments left: ${emiObj.installmentsLeft}`);
+          return emiObj.installmentsLeft > 0 && emiObj.totalLoan > 0;
         }
+        return false;
+      });
+      teamState.smallDealLoan -= totalSmallEmiPaid;
+      if (teamState.smallDealLoan < 0) teamState.smallDealLoan = 0;
+    }
+    if (teamState.bigDealEmis && Array.isArray(teamState.bigDealEmis)) {
+      let totalBigEmiPaid = 0;
+      teamState.bigDealEmis = teamState.bigDealEmis.filter(emiObj => {
+        if (emiObj.installmentsLeft > 0 && emiObj.totalLoan > 0) {
+          emiObj.totalLoan -= emiObj.emi;
+          emiObj.installmentsLeft -= 1;
+          if (emiObj.totalLoan < 0) emiObj.totalLoan = 0;
+          totalBigEmiPaid += emiObj.emi;
+          emiExpenseTotal += (emiObj.totalLoan * 0.10) + emiObj.emi;
+          addLogEntry(teamState.tableId, `Big Deal EMI paid: ${emiObj.emi.toFixed(2)}. Remaining loan: ${emiObj.totalLoan.toFixed(2)}. Installments left: ${emiObj.installmentsLeft}`);
+          return emiObj.installmentsLeft > 0 && emiObj.totalLoan > 0;
+        }
+        return false;
+      });
+      teamState.bigDealLoan -= totalBigEmiPaid;
+      if (teamState.bigDealLoan < 0) teamState.bigDealLoan = 0;
+    }
+    // Add EMI/loan charges to base expenses if any active EMIs
+    teamState.expenses = baseExpenses + emiExpenseTotal;
+  const totalIncome = teamState.income + teamState.passiveIncome;
+  const totalExpenses = teamState.expenses;
+
+  if (teamState.isAssetsFrozen) {
+    if (teamState.paydayFrozenTurn === 0) {
+      teamState.cash -= totalExpenses;
+      teamState.paydayFrozenTurn = 1;
+      addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets are frozen. Payday income is zero. Expenses have been deducted.`);
     } else {
-        const netPaydayIncome = totalIncome - totalExpenses;
-        teamState.cash += netPaydayIncome;
-        addLogEntry(teamState.tableId, `Team ${teamState.teamName}: You received a net payday of ${netPaydayIncome}.`);
+      teamState.isAssetsFrozen = false;
+      teamState.paydayFrozenTurn = 0;
+      const netPaydayIncome = totalIncome - totalExpenses;
+      teamState.cash += netPaydayIncome;
+      addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets are no longer frozen. Your net payday is ${netPaydayIncome}.`);
     }
-    
-    if (teamState.cash < 0) {
-      const loanNeeded = Math.abs(teamState.cash);
-      teamState.personalLoan += loanNeeded;
-      teamState.cash = 0;
-    }
+  } else {
+    const netPaydayIncome = totalIncome - totalExpenses;
+    teamState.cash += netPaydayIncome;
+    addLogEntry(teamState.tableId, `Team ${teamState.teamName}: You received a net payday of ${netPaydayIncome}.`);
+  }
 
     await teamState.save();
     
@@ -108,7 +175,7 @@ exports.handleRoll = async (req, res) => {
 
 exports.handleSmallDeal = async (req, res) => {
   try {
-    const { teamId, dealId } = req.body;
+    const { teamId, dealId, buyAmount, installments } = req.body;
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
@@ -120,32 +187,52 @@ exports.handleSmallDeal = async (req, res) => {
     if (!universalDeal) {
       return res.status(404).json({ message: 'Deal not found.' });
     }
-    
-    const dealAlreadyOwned = universalDeal.owners.some(owner => owner.tableId.toString() === team.tableId.toString());
 
+    const dealAlreadyOwned = universalDeal.owners.some(owner => owner.tableId.toString() === team.tableId.toString());
     if (dealAlreadyOwned) {
       return res.status(409).json({ message: 'This deal is already owned by a team on this table.' });
     }
-    
-    if (team.cash < universalDeal.cost) {
+
+    if (buyAmount > universalDeal.cost || buyAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid buy amount.' });
+    }
+    if (team.cash < buyAmount) {
       return res.status(400).json({ message: 'Not enough cash to buy this deal.' });
     }
 
+    // Calculate loan and interest
+    const loanPrincipal = universalDeal.cost - buyAmount;
+    let interestRate = 0;
+    if (installments === 3) interestRate = 0.05;
+    else if (installments === 6) interestRate = 0.10;
+    else if (installments === 12) interestRate = 0.20;
+    else return res.status(400).json({ message: 'Invalid installment plan.' });
+    const interest = loanPrincipal * interestRate;
+    const totalLoan = loanPrincipal + interest;
+    // EMI calculation
+    const emi = totalLoan / installments;
+  // Expense increase: 10% of deal loan + EMI
+  const expenseIncrease = (totalLoan * 0.10) + emi;
+
     universalDeal.owners.push({ tableId: team.tableId, teamId: team._id });
     await universalDeal.save();
-    
-    team.cash -= universalDeal.cost;
+
+    team.cash -= buyAmount;
     team.passiveIncome += universalDeal.passiveIncome;
-    team.assets += universalDeal.cost;
+    team.assets += buyAmount;
     team.deals.push(universalDeal._id);
+    team.smallDealLoan += totalLoan;
+    team.expenses += expenseIncrease;
+    // Store EMI plan for future payday logic (custom field)
+    if (!team.smallDealEmis) team.smallDealEmis = [];
+    team.smallDealEmis.push({ dealId, totalLoan, emi, installmentsLeft: installments, interestRate });
     await team.save();
 
-    addLogEntry(team.tableId, `Team ${team.teamName} purchased "${universalDeal.name}" for ${universalDeal.cost}.`);
+    addLogEntry(team.tableId, `Team ${team.teamName} purchased "${universalDeal.name}" for ${buyAmount}. Loan: ${totalLoan} (${installments} installments, ${interestRate * 100}% interest). EMI: ${emi.toFixed(2)}.`);
 
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
     res.status(200).json({ teams: allTeams, logs });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -154,7 +241,7 @@ exports.handleSmallDeal = async (req, res) => {
 
 exports.handleBigDeal = async (req, res) => {
   try {
-    const { teamId, dealId } = req.body;
+    const { teamId, dealId, buyAmount, installments } = req.body;
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
@@ -166,32 +253,52 @@ exports.handleBigDeal = async (req, res) => {
     if (!universalDeal) {
       return res.status(404).json({ message: 'Deal not found.' });
     }
-    
-    const dealAlreadyOwned = universalDeal.owners.some(owner => owner.tableId.toString() === team.tableId.toString());
 
+    const dealAlreadyOwned = universalDeal.owners.some(owner => owner.tableId.toString() === team.tableId.toString());
     if (dealAlreadyOwned) {
       return res.status(409).json({ message: 'This deal is already owned by a team on this table.' });
     }
 
-    if (team.cash < universalDeal.cost) {
+    if (buyAmount > universalDeal.cost || buyAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid buy amount.' });
+    }
+    if (team.cash < buyAmount) {
       return res.status(400).json({ message: 'Not enough cash to buy this deal.' });
     }
 
+    // Calculate loan and interest
+    const loanPrincipal = universalDeal.cost - buyAmount;
+    let interestRate = 0;
+    if (installments === 3) interestRate = 0.05;
+    else if (installments === 6) interestRate = 0.10;
+    else if (installments === 12) interestRate = 0.20;
+    else return res.status(400).json({ message: 'Invalid installment plan.' });
+    const interest = loanPrincipal * interestRate;
+    const totalLoan = loanPrincipal + interest;
+    // EMI calculation
+    const emi = totalLoan / installments;
+  // Expense increase: 10% of deal loan + EMI
+  const expenseIncrease = (totalLoan * 0.10) + emi;
+
     universalDeal.owners.push({ tableId: team.tableId, teamId: team._id });
     await universalDeal.save();
-    
-    team.cash -= universalDeal.cost;
+
+    team.cash -= buyAmount;
     team.passiveIncome += universalDeal.passiveIncome;
-    team.assets += universalDeal.cost;
+    team.assets += buyAmount;
     team.deals.push(universalDeal._id);
+    team.bigDealLoan += totalLoan;
+    team.expenses += expenseIncrease;
+    // Store EMI plan for future payday logic (custom field)
+    if (!team.bigDealEmis) team.bigDealEmis = [];
+    team.bigDealEmis.push({ dealId, totalLoan, emi, installmentsLeft: installments, interestRate });
     await team.save();
 
-    addLogEntry(team.tableId, `Team ${team.teamName} purchased "${universalDeal.name}" for ${universalDeal.cost}.`);
+    addLogEntry(team.tableId, `Team ${team.teamName} purchased "${universalDeal.name}" for ${buyAmount}. Loan: ${totalLoan} (${installments} installments, ${interestRate * 100}% interest). EMI: ${emi.toFixed(2)}.`);
 
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
     res.status(200).json({ teams: allTeams, logs });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -199,87 +306,97 @@ exports.handleBigDeal = async (req, res) => {
 };
 
 exports.handleBuyStock = async (req, res) => {
-    try {
-        const { teamId, name, amount, price } = req.body;
-        const team = await Team.findById(teamId);
-        if (!team) return res.status(404).json({ message: 'Team not found' });
+  try {
+    const { teamId, name, amount, price, loanAmount, installments } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
 
-        if (team.isAssetsFrozen) {
-            return res.status(403).json({ message: 'Assets are frozen. Cannot buy stocks.' });
-        }
-
-        const totalCost = price * amount;
-        if (totalCost > team.cash + team.personalLoan) {
-             return res.status(400).json({ message: 'Not enough funds to buy this stock.' });
-        }
-        
-        team.cash -= totalCost;
-        if (team.cash < 0) {
-            team.personalLoan += Math.abs(team.cash);
-            team.cash = 0;
-        }
-
-        const newStock = {
-            name,
-            amount,
-            purchasePrice: price,
-        };
-        
-        team.assets += totalCost;
-        team.stocks.push(newStock);
-        await team.save();
-
-        addLogEntry(team.tableId, `Team ${team.teamName} bought ${amount} units of ${name} stock for ${totalCost}.`);
-
-        const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
-        const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
-        res.status(200).json({ teams: allTeams, logs });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+    if (team.isAssetsFrozen) {
+      return res.status(403).json({ message: 'Assets are frozen. Cannot buy stocks.' });
     }
+
+    const totalCost = price * amount;
+    if (loanAmount && loanAmount > 0) {
+      // User requested loan for stock purchase
+  const interestRate = team.loanInterestRate || 0.13;
+  const interest = loanAmount * interestRate;
+      const totalLoan = loanAmount + interest;
+  team.stocksLoan += totalLoan;
+  team.cash -= (totalCost - loanAmount);
+  if (team.cash < 0) team.cash = 0;
+  // No expense increase for stock loan
+  addLogEntry(team.tableId, `Team ${team.teamName} bought ${amount} units of ${name} stock for ${totalCost}. Loan: ${totalLoan} (13% interest).`);
+    } else {
+      // No loan, pay with cash
+      if (team.cash < totalCost) {
+        return res.status(400).json({ message: 'Not enough cash to buy this stock.' });
+      }
+      team.cash -= totalCost;
+      addLogEntry(team.tableId, `Team ${team.teamName} bought ${amount} units of ${name} stock for ${totalCost}.`);
+    }
+
+    const newStock = {
+      name,
+      amount,
+      purchasePrice: price,
+    };
+    team.assets += totalCost;
+    team.stocks.push(newStock);
+    await team.save();
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
 exports.handleBuyCrypto = async (req, res) => {
-    try {
-        const { teamId, name, amount, price } = req.body;
-        const team = await Team.findById(teamId);
-        if (!team) return res.status(404).json({ message: 'Team not found' });
+  try {
+    const { teamId, name, amount, price, loanAmount, installments } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
 
-        if (team.isAssetsFrozen) {
-            return res.status(403).json({ message: 'Assets are frozen. Cannot buy crypto.' });
-        }
-
-        const totalCost = price * amount;
-        if (totalCost > team.cash + team.personalLoan) {
-            return res.status(400).json({ message: 'Not enough funds to buy this crypto.' });
-        }
-
-        team.cash -= totalCost;
-        if (team.cash < 0) {
-            team.personalLoan += Math.abs(team.cash);
-            team.cash = 0;
-        }
-
-        const newCrypto = {
-            name,
-            amount,
-            purchasePrice: price,
-        };
-        
-        team.assets += totalCost;
-        team.crypto.push(newCrypto);
-        await team.save();
-        
-        addLogEntry(team.tableId, `Team ${team.teamName} bought ${amount} units of ${name} crypto for ${totalCost}.`);
-
-        const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
-        const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
-        res.status(200).json({ teams: allTeams, logs });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+    if (team.isAssetsFrozen) {
+      return res.status(403).json({ message: 'Assets are frozen. Cannot buy crypto.' });
     }
+
+    const totalCost = price * amount;
+    if (loanAmount && loanAmount > 0) {
+  const interestRate = team.loanInterestRate || 0.13;
+  const interest = loanAmount * interestRate;
+      const totalLoan = loanAmount + interest;
+  team.cryptoLoan += totalLoan;
+  team.cash -= (totalCost - loanAmount);
+  if (team.cash < 0) team.cash = 0;
+  // No expense increase for crypto loan
+  addLogEntry(team.tableId, `Team ${team.teamName} bought ${amount} units of ${name} crypto for ${totalCost}. Loan: ${totalLoan} (13% interest).`);
+    } else {
+      if (team.cash < totalCost) {
+        return res.status(400).json({ message: 'Not enough cash to buy this crypto.' });
+      }
+      team.cash -= totalCost;
+      addLogEntry(team.tableId, `Team ${team.teamName} bought ${amount} units of ${name} crypto for ${totalCost}.`);
+    }
+
+    const newCrypto = {
+      name,
+      amount,
+      purchasePrice: price,
+    };
+    team.assets += totalCost;
+    team.crypto.push(newCrypto);
+    await team.save();
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
 exports.handleAssetFreeze = async (req, res) => {
@@ -377,31 +494,48 @@ exports.handleBorrowLoan = async (req, res) => {
 };
 
 exports.handleRepayLoan = async (req, res) => {
-    try {
-        const { teamId, amount } = req.body;
-        const team = await Team.findById(teamId);
-        if (!team) return res.status(404).json({ message: 'Team not found' });
+  try {
+    const { teamId, amount, repayType } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
 
-        const repayAmount = parseFloat(amount);
-        if (isNaN(repayAmount) || repayAmount <= 0) {
-            return res.status(400).json({ message: 'Invalid repayment amount.' });
-        }
-        if (team.cash < repayAmount || team.personalLoan < repayAmount) {
-            return res.status(400).json({ message: 'Not enough cash or loan outstanding to repay that amount.' });
-        }
-
-        team.personalLoan -= repayAmount;
-        team.cash -= repayAmount;
-        await team.save();
-
-        addLogEntry(team.tableId, `Team ${team.teamName} repaid a loan of ${repayAmount}.`);
-
-        const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
-        const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
-        res.status(200).json({ teams: allTeams, logs });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+    const repayAmount = parseFloat(amount);
+    if (isNaN(repayAmount) || repayAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid repayment amount.' });
     }
+    if (team.cash < repayAmount) {
+      return res.status(400).json({ message: 'Not enough cash to repay that amount.' });
+    }
+
+    let loanField = null;
+    if (repayType === 'smallDealLoan') loanField = 'smallDealLoan';
+    else if (repayType === 'bigDealLoan') loanField = 'bigDealLoan';
+    else if (repayType === 'stocksLoan') loanField = 'stocksLoan';
+    else if (repayType === 'cryptoLoan') loanField = 'cryptoLoan';
+    else loanField = 'personalLoan';
+
+    if (team[loanField] < repayAmount) {
+      return res.status(400).json({ message: 'Not enough loan outstanding to repay that amount.' });
+    }
+
+    team[loanField] -= repayAmount;
+    team.cash -= repayAmount;
+
+    // Only affect expenses for deal loans
+    if (loanField === 'smallDealLoan' || loanField === 'bigDealLoan') {
+      team.expenses -= repayAmount * 0.10; // Remove 10% expense for repaid amount
+      if (team.expenses < 0) team.expenses = 0;
+    }
+    await team.save();
+
+    addLogEntry(team.tableId, `Team ${team.teamName} repaid ${repayAmount} of ${loanField}.`);
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };

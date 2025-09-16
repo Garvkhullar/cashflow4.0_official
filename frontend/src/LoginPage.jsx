@@ -24,6 +24,8 @@ const showMessage = (message, type = 'success') => {
 const LoginPage = ({ setAuth }) => {
     const [loginUsername, setLoginUsername] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
+    const [adminUsername, setAdminUsername] = useState('');
+    const [adminPassword, setAdminPassword] = useState('');
     const [tableUsername, setTableUsername] = useState('');
     const [tablePassword, setTablePassword] = useState('');
     const [team1Name, setTeam1Name] = useState('');
@@ -39,6 +41,19 @@ const LoginPage = ({ setAuth }) => {
         try {
             const payload = { username: loginUsername, password: loginPassword };
             const { data } = await axios.post(`${backendUrl}/auth/login`, payload);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            setAuth(data);
+            showMessage("Logged in successfully!");
+        } catch (error) {
+            showMessage(error.response?.data?.message || 'Authentication failed', 'error');
+        }
+    };
+
+    const handleAdminLogin = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = { username: adminUsername, password: adminPassword };
+            const { data } = await axios.post(`${backendUrl}/auth/admin-login`, payload);
             localStorage.setItem('userInfo', JSON.stringify(data));
             setAuth(data);
             showMessage("Logged in successfully!");
@@ -142,7 +157,6 @@ const LoginPage = ({ setAuth }) => {
                                 onBlur={() => setFocusIdx(-1)}
                                 required
                             />
-                            
                             <label className="text-sm font-medium text-[#C2C7D0] mt-4 mb-1">Table Password:</label>
                             <input
                                 type="password"
@@ -154,19 +168,10 @@ const LoginPage = ({ setAuth }) => {
                                 onBlur={() => setFocusIdx(-1)}
                                 required
                             />
-
                             <label className="text-sm font-medium text-[#C2C7D0] mt-4 mb-1">Team Names:</label>
                             <input type="text" className={inputStyle(focusIdx === 2)} placeholder="Team Name 1" value={team1Name} onChange={(e) => setTeam1Name(e.target.value)} onFocus={() => setFocusIdx(2)} onBlur={() => setFocusIdx(-1)} required />
                             <input type="text" className={inputStyle(focusIdx === 3)} placeholder="Team Name 2" value={team2Name} onChange={(e) => setTeam2Name(e.target.value)} onFocus={() => setFocusIdx(3)} onBlur={() => setFocusIdx(-1)} required />
                             <input type="text" className={inputStyle(focusIdx === 4)} placeholder="Team Name 3" value={team3Name} onChange={(e) => setTeam3Name(e.target.value)} onFocus={() => setFocusIdx(4)} onBlur={() => setFocusIdx(-1)} required />
-
-                            <label className="text-sm font-medium text-[#C2C7D0] mt-4 mb-1">Role:</label>
-                            <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputStyle(focusIdx === 5)} cursor-pointer`} onFocus={() => setFocusIdx(5)} onBlur={() => setFocusIdx(-1)}>
-                                <option value="manager">Manager</option>
-                                <option value="admin">Admin</option>
-                                <option value="superAdmin">SuperAdmin</option>
-                            </select>
-
                             <button
                                 type="submit"
                                 className="mt-8 py-3 px-4 rounded-lg text-white font-bold text-base cursor-pointer transition-all duration-200 shadow-md bg-gradient-to-r from-[#6C63FF] to-[#4F8CFF] hover:scale-105"
@@ -177,7 +182,7 @@ const LoginPage = ({ setAuth }) => {
                         </form>
                     </div>
 
-                    {/* Login Card */}
+                    {/* Login to Existing Table Card */}
                     <div className="bg-[rgba(35,39,47,0.95)] rounded-2xl shadow-2xl p-8 md:min-w-[340px] flex flex-col items-stretch" style={{boxShadow: "0 8px 40px 0 rgba(0,0,0,0.32)"}}>
                         <h3 className="text-lg font-bold text-[#F3F4F6] mb-5">
                             <span role="img" aria-label="lock" className="mr-2">🔒</span>
@@ -203,6 +208,45 @@ const LoginPage = ({ setAuth }) => {
                                 value={loginPassword}
                                 onChange={(e) => setLoginPassword(e.target.value)}
                                 onFocus={() => setFocusIdx(7)}
+                                onBlur={() => setFocusIdx(-1)}
+                                required
+                            />
+                            <button
+                                type="submit"
+                                className="mt-8 py-3 px-4 rounded-lg text-white font-bold text-base cursor-pointer transition-all duration-200 shadow-md bg-gradient-to-r from-[#4CAF50] to-[#43E97B] hover:scale-105"
+                            >
+                                <span role="img" aria-label="login" className="mr-2">➡️</span>
+                                Login
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* Admin Login Card */}
+                    <div className="bg-[rgba(35,39,47,0.95)] rounded-2xl shadow-2xl p-8 md:min-w-[340px] flex flex-col items-stretch" style={{boxShadow: "0 8px 40px 0 rgba(0,0,0,0.32)"}}>
+                        <h3 className="text-lg font-bold text-[#F3F4F6] mb-5">
+                            <span role="img" aria-label="lock" className="mr-2">🔒</span>
+                            Admin Login
+                        </h3>
+                        <form onSubmit={handleAdminLogin} className="flex flex-col flex-grow">
+                            <label className="text-sm font-medium text-[#C2C7D0] mt-4 mb-1">Username:</label>
+                            <input
+                                type="text"
+                                className={inputStyle(focusIdx === 8)}
+                                placeholder="Enter admin username"
+                                value={adminUsername}
+                                onChange={(e) => setAdminUsername(e.target.value)}
+                                onFocus={() => setFocusIdx(8)}
+                                onBlur={() => setFocusIdx(-1)}
+                                required
+                            />
+                            <label className="text-sm font-medium text-[#C2C7D0] mt-4 mb-1">Password:</label>
+                            <input
+                                type="password"
+                                className={inputStyle(focusIdx === 9)}
+                                placeholder="Enter admin password"
+                                value={adminPassword}
+                                onChange={(e) => setAdminPassword(e.target.value)}
+                                onFocus={() => setFocusIdx(9)}
                                 onBlur={() => setFocusIdx(-1)}
                                 required
                             />

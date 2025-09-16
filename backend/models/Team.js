@@ -7,11 +7,25 @@ const teamSchema = new mongoose.Schema({
   income: { type: Number, default: 450000 },
   passiveIncome: { type: Number, default: 0 },
   assets: { type: Number, default: 0 },
+  stocksLoan: { type: Number, default: 0 },
+  cryptoLoan: { type: Number, default: 0 },
   expenses: { type: Number, default: 300000 },
   smallDealLoan: { type: Number, default: 0 },
   bigDealLoan: { type: Number, default: 0 },
-  personalLoan: { type: Number, default: 0 },
-  loanInterestRate: { type: Number, default: 0.13 },
+  smallDealEmis: [{
+    dealId: { type: mongoose.Schema.Types.ObjectId, ref: 'Deal' },
+    totalLoan: Number,
+    emi: Number,
+    installmentsLeft: Number,
+    interestRate: Number
+  }],
+  bigDealEmis: [{
+    dealId: { type: mongoose.Schema.Types.ObjectId, ref: 'Deal' },
+    totalLoan: Number,
+    emi: Number,
+    installmentsLeft: Number,
+    interestRate: Number
+  }],
   isAssetsFrozen: { type: Boolean, default: false },
   paydayFrozenTurn: { type: Number, default: 0 },
   deals: [{
