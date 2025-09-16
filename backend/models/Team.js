@@ -42,6 +42,16 @@ const teamSchema = new mongoose.Schema({
     amount: { type: Number, required: true },
     purchasePrice: { type: Number, required: true },
   }],
+
+  // Vacation status and exemption
+  isVacationOn: { type: Boolean, default: false },
+  vacationPaydaysLeft: { type: Number, default: 0 },
+
+  // Personal loan for covering expenses
+  personalLoan: { type: Number, default: 0 },
+
+  // Flag for next payday tax
+  nextPaydayTax: { type: Boolean, default: false },
 });
 
 const Team = mongoose.model('Team', teamSchema);

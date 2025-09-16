@@ -1,3 +1,76 @@
+// Set next payday tax for a team
+exports.setNextPaydayTax = async (req, res) => {
+  try {
+    const { teamId } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+    team.nextPaydayTax = true;
+    await team.save();
+    addLogEntry(team.tableId, `Team ${team.teamName}: TAX button clicked. Next payday will apply 13% tax.`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+// Toggle vacation on/off for a team
+exports.toggleVacation = async (req, res) => {
+  try {
+    const { teamId, status } = req.body; // status: true (on) or false (off)
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+    team.isVacationOn = !!status;
+    team.vacationPaydaysLeft = status ? 2 : 0;
+    await team.save();
+    await addLogEntry(team.tableId, `Team ${team.teamName} vacation turned ${status ? 'ON' : 'OFF'}. Tax exemption for next ${team.vacationPaydaysLeft} paydays.`);
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+// Deduct or add cash to a team by percentage or number
+exports.deductOrAddCash = async (req, res) => {
+  try {
+    const { teamId, value, type, operation } = req.body;
+    // type: 'percent' or 'number'; operation: 'add' or 'deduct'
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+
+    let change = 0;
+    if (type === 'percent') {
+      change = team.cash * (parseFloat(value) / 100);
+    } else {
+      change = parseFloat(value);
+    }
+    if (isNaN(change) || change < 0) {
+      return res.status(400).json({ message: 'Invalid value.' });
+    }
+
+    if (operation === 'deduct') {
+      if (team.cash < change) {
+        return res.status(400).json({ message: 'Not enough cash to deduct.' });
+      }
+      team.cash -= change;
+      await addLogEntry(team.tableId, `Team ${team.teamName} deducted ${change} cash (${type}).`);
+    } else if (operation === 'add') {
+      team.cash += change;
+      await addLogEntry(team.tableId, `Team ${team.teamName} added ${change} cash (${type}).`);
+    } else {
+      return res.status(400).json({ message: 'Invalid operation.' });
+    }
+    await team.save();
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 // Global market mode state
 let marketMode = 'normal'; // 'bull', 'bear', 'normal'
 
@@ -75,8 +148,21 @@ exports.handlePayday = async (req, res) => {
     }
 
   // Always reset expenses to base value before adding EMI/loan charges
-  const baseExpenses = 300000;
+  let baseExpenses = 300000;
   teamState.expenses = baseExpenses;
+
+  // Vacation tax exemption logic
+  let taxExempt = false;
+  if (teamState.isVacationOn && teamState.vacationPaydaysLeft > 0) {
+    taxExempt = true;
+    teamState.vacationPaydaysLeft -= 1;
+    if (teamState.vacationPaydaysLeft === 0) {
+      teamState.isVacationOn = false;
+      await addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Vacation ended. Tax exemption expired.`);
+    } else {
+      await addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Vacation ON. Tax exemption for this payday. ${teamState.vacationPaydaysLeft} paydays left.`);
+    }
+  }
 
   // Apply market mode payday multiplier
   const paydayMultiplier = teamState.paydayMultiplier || 1.0;
@@ -91,7 +177,7 @@ exports.handlePayday = async (req, res) => {
           emiObj.installmentsLeft -= 1;
           if (emiObj.totalLoan < 0) emiObj.totalLoan = 0;
           totalSmallEmiPaid += emiObj.emi;
-          emiExpenseTotal += (emiObj.totalLoan * 0.10) + emiObj.emi;
+          emiExpenseTotal += (emiObj.totalLoan * 0.13) + emiObj.emi;
           addLogEntry(teamState.tableId, `Small Deal EMI paid: ${emiObj.emi.toFixed(2)}. Remaining loan: ${emiObj.totalLoan.toFixed(2)}. Installments left: ${emiObj.installmentsLeft}`);
           return emiObj.installmentsLeft > 0 && emiObj.totalLoan > 0;
         }
@@ -108,7 +194,7 @@ exports.handlePayday = async (req, res) => {
           emiObj.installmentsLeft -= 1;
           if (emiObj.totalLoan < 0) emiObj.totalLoan = 0;
           totalBigEmiPaid += emiObj.emi;
-          emiExpenseTotal += (emiObj.totalLoan * 0.10) + emiObj.emi;
+          emiExpenseTotal += (emiObj.totalLoan * 0.13) + emiObj.emi;
           addLogEntry(teamState.tableId, `Big Deal EMI paid: ${emiObj.emi.toFixed(2)}. Remaining loan: ${emiObj.totalLoan.toFixed(2)}. Installments left: ${emiObj.installmentsLeft}`);
           return emiObj.installmentsLeft > 0 && emiObj.totalLoan > 0;
         }
@@ -118,26 +204,57 @@ exports.handlePayday = async (req, res) => {
       if (teamState.bigDealLoan < 0) teamState.bigDealLoan = 0;
     }
     // Add EMI/loan charges to base expenses if any active EMIs
-    teamState.expenses = baseExpenses + emiExpenseTotal;
+    let personalLoanInterest = 0;
+    if (teamState.personalLoan && teamState.personalLoan > 0) {
+  personalLoanInterest = teamState.personalLoan * 0.13;
+    }
+    teamState.expenses = baseExpenses + emiExpenseTotal + personalLoanInterest;
   const totalIncome = teamState.income + teamState.passiveIncome;
   const totalExpenses = teamState.expenses;
+  let netPaydayIncome = totalIncome - totalExpenses;
+  if (personalLoanInterest > 0) {
+    addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Personal loan interest of ${personalLoanInterest.toFixed(2)} added to expenses.`);
+  }
+  // Apply 13% tax ONLY if nextPaydayTax is true
+  let tax = 0;
+  if (teamState.nextPaydayTax) {
+    tax = Math.round(netPaydayIncome * 0.13);
+    netPaydayIncome -= tax;
+    teamState.nextPaydayTax = false;
+    addLogEntry(teamState.tableId, `Team ${teamState.teamName}: 13% tax applied on payday. Tax deducted: ${tax}`);
+  }
 
   if (teamState.isAssetsFrozen) {
     if (teamState.paydayFrozenTurn === 0) {
-      teamState.cash -= totalExpenses;
+      // Asset freeze: only expenses deducted
+      if (teamState.cash < totalExpenses) {
+        const shortfall = totalExpenses - teamState.cash;
+        teamState.personalLoan += shortfall;
+        teamState.cash = 0;
+        addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets frozen. Not enough cash for expenses. Personal loan taken: ${shortfall}.`);
+      } else {
+        teamState.cash -= totalExpenses;
+      }
       teamState.paydayFrozenTurn = 1;
       addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets are frozen. Payday income is zero. Expenses have been deducted.`);
     } else {
       teamState.isAssetsFrozen = false;
       teamState.paydayFrozenTurn = 0;
-      const netPaydayIncome = totalIncome - totalExpenses;
       teamState.cash += netPaydayIncome;
       addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Assets are no longer frozen. Your net payday is ${netPaydayIncome}.`);
     }
   } else {
-    const netPaydayIncome = totalIncome - totalExpenses;
-    teamState.cash += netPaydayIncome;
-    addLogEntry(teamState.tableId, `Team ${teamState.teamName}: You received a net payday of ${netPaydayIncome}.`);
+    // Normal payday: add net income, but if cash < expenses, create personal loan for shortfall
+    if (teamState.cash + netPaydayIncome < 0) {
+      // This case is rare, but if netPaydayIncome is negative and cash is not enough
+      const shortfall = Math.abs(teamState.cash + netPaydayIncome);
+      teamState.personalLoan += shortfall;
+      teamState.cash = 0;
+      addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Not enough cash for expenses. Personal loan taken: ${shortfall}.`);
+    } else {
+      teamState.cash += netPaydayIncome;
+    }
+  addLogEntry(teamState.tableId, `Team ${teamState.teamName}: You received a net payday of ${netPaydayIncome}. ${tax > 0 ? `Tax deducted: ${tax}` : ''}`);
   }
 
     await teamState.save();
@@ -204,7 +321,7 @@ exports.handleSmallDeal = async (req, res) => {
     const loanPrincipal = universalDeal.cost - buyAmount;
     let interestRate = 0;
     if (installments === 3) interestRate = 0.05;
-    else if (installments === 6) interestRate = 0.10;
+  else if (installments === 6) interestRate = 0.13;
     else if (installments === 12) interestRate = 0.20;
     else return res.status(400).json({ message: 'Invalid installment plan.' });
     const interest = loanPrincipal * interestRate;
@@ -212,7 +329,7 @@ exports.handleSmallDeal = async (req, res) => {
     // EMI calculation
     const emi = totalLoan / installments;
   // Expense increase: 10% of deal loan + EMI
-  const expenseIncrease = (totalLoan * 0.10) + emi;
+  const expenseIncrease = (totalLoan * 0.13) + emi;
 
     universalDeal.owners.push({ tableId: team.tableId, teamId: team._id });
     await universalDeal.save();
@@ -270,7 +387,7 @@ exports.handleBigDeal = async (req, res) => {
     const loanPrincipal = universalDeal.cost - buyAmount;
     let interestRate = 0;
     if (installments === 3) interestRate = 0.05;
-    else if (installments === 6) interestRate = 0.10;
+  else if (installments === 6) interestRate = 0.13;
     else if (installments === 12) interestRate = 0.20;
     else return res.status(400).json({ message: 'Invalid installment plan.' });
     const interest = loanPrincipal * interestRate;
@@ -278,7 +395,7 @@ exports.handleBigDeal = async (req, res) => {
     // EMI calculation
     const emi = totalLoan / installments;
   // Expense increase: 10% of deal loan + EMI
-  const expenseIncrease = (totalLoan * 0.10) + emi;
+  const expenseIncrease = (totalLoan * 0.13) + emi;
 
     universalDeal.owners.push({ tableId: team.tableId, teamId: team._id });
     await universalDeal.save();
@@ -472,20 +589,39 @@ exports.handleBorrowLoan = async (req, res) => {
         const team = await Team.findById(teamId);
         if (!team) return res.status(404).json({ message: 'Team not found' });
         
-        const loanAmount = parseFloat(amount);
-        if (isNaN(loanAmount) || loanAmount <= 0) {
-            return res.status(400).json({ message: 'Invalid loan amount.' });
-        }
+    const loanAmount = parseFloat(amount);
+    if (isNaN(loanAmount) || loanAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid loan amount.' });
+    }
 
-        team.personalLoan += loanAmount;
-        team.cash += loanAmount;
-        await team.save();
+    // Add 10% interest to borrowed amount
+  const interest = loanAmount * 0.13;
+    const totalLoan = loanAmount + interest;
+    team.personalLoan += totalLoan;
+    team.cash += loanAmount;
+    // Update expenses to immediately reflect new loan interest
+    let baseExpenses = 300000;
+    let emiExpenseTotal = 0;
+    // Add any existing EMIs interest if needed (same as payday logic)
+    if (team.smallDealEmis && Array.isArray(team.smallDealEmis)) {
+      team.smallDealEmis.forEach(emiObj => {
+        emiExpenseTotal += (emiObj.totalLoan * 0.13) + emiObj.emi;
+      });
+    }
+    if (team.bigDealEmis && Array.isArray(team.bigDealEmis)) {
+      team.bigDealEmis.forEach(emiObj => {
+        emiExpenseTotal += (emiObj.totalLoan * 0.13) + emiObj.emi;
+      });
+    }
+    let personalLoanInterest = team.personalLoan * 0.13;
+    team.expenses = baseExpenses + emiExpenseTotal + personalLoanInterest;
+    await team.save();
 
-        addLogEntry(team.tableId, `Team ${team.teamName} borrowed a loan of ${loanAmount}.`);
+    addLogEntry(team.tableId, `Team ${team.teamName} borrowed a loan of ${loanAmount}. 13% interest (${interest}) added. Total loan: ${totalLoan}. Expenses updated: ${team.expenses}.`);
 
-        const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
-        const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
-        res.status(200).json({ teams: allTeams, logs });
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
 
     } catch (error) {
         console.error(error);
@@ -507,12 +643,12 @@ exports.handleRepayLoan = async (req, res) => {
       return res.status(400).json({ message: 'Not enough cash to repay that amount.' });
     }
 
-    let loanField = null;
-    if (repayType === 'smallDealLoan') loanField = 'smallDealLoan';
-    else if (repayType === 'bigDealLoan') loanField = 'bigDealLoan';
-    else if (repayType === 'stocksLoan') loanField = 'stocksLoan';
-    else if (repayType === 'cryptoLoan') loanField = 'cryptoLoan';
-    else loanField = 'personalLoan';
+  let loanField = null;
+  if (repayType === 'smallDealLoan') loanField = 'smallDealLoan';
+  else if (repayType === 'bigDealLoan') loanField = 'bigDealLoan';
+  else if (repayType === 'stocksLoan') loanField = 'stocksLoan';
+  else if (repayType === 'cryptoLoan') loanField = 'cryptoLoan';
+  else if (repayType === 'personalLoan') loanField = 'personalLoan';
 
     if (team[loanField] < repayAmount) {
       return res.status(400).json({ message: 'Not enough loan outstanding to repay that amount.' });
@@ -523,8 +659,25 @@ exports.handleRepayLoan = async (req, res) => {
 
     // Only affect expenses for deal loans
     if (loanField === 'smallDealLoan' || loanField === 'bigDealLoan') {
-      team.expenses -= repayAmount * 0.10; // Remove 10% expense for repaid amount
+      team.expenses -= repayAmount * 0.13; // Remove 13% expense for repaid amount
       if (team.expenses < 0) team.expenses = 0;
+    }
+    // If personal loan is fully repaid, remove 13% interest from expenses
+    if (loanField === 'personalLoan' && team.personalLoan <= 0) {
+      let baseExpenses = 300000;
+      let emiExpenseTotal = 0;
+      if (team.smallDealEmis && Array.isArray(team.smallDealEmis)) {
+        team.smallDealEmis.forEach(emiObj => {
+          emiExpenseTotal += (emiObj.totalLoan * 0.13) + emiObj.emi;
+        });
+      }
+      if (team.bigDealEmis && Array.isArray(team.bigDealEmis)) {
+        team.bigDealEmis.forEach(emiObj => {
+          emiExpenseTotal += (emiObj.totalLoan * 0.13) + emiObj.emi;
+        });
+      }
+      team.expenses = baseExpenses + emiExpenseTotal;
+      addLogEntry(team.tableId, `Team ${team.teamName} has fully repaid personal loan. 13% interest removed from expenses. Expenses updated: ${team.expenses}.`);
     }
     await team.save();
 
