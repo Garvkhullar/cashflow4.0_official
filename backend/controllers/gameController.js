@@ -769,11 +769,11 @@ exports.handleOptions = async (req, res) => {
 
 exports.handleSellStock = async (req, res) => {
   try {
-    const { teamId, stockId, amount, price } = req.body;
+    const { teamId, stockName, amount, price } = req.body;
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
-    const stockIndex = team.stocks.findIndex(s => s._id.toString() === stockId);
+    const stockIndex = team.stocks.findIndex(s => s.name === stockName);
     if (stockIndex === -1) {
       return res.status(404).json({ message: 'Stock not found in your portfolio.' });
     }

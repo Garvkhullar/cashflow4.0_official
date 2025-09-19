@@ -206,9 +206,9 @@ const GamePage = ({ auth, setAuth }) => {
         await handleAction(endpoint, { name, amount, price, loanAmount });
     };
 
-    const handleSellStock = async (stockId, amount, price) => {
+    const handleSellStock = async (stockName, amount, price) => {
         setIsAssetModalOpen(false);
-        await handleAction('stock/sell', { stockId, amount, price });
+        await handleAction('stock/sell', { stockName, amount, price });
     };
 
     const handleLoanAction = async (amount, repayType) => {
@@ -676,20 +676,14 @@ const GamePage = ({ auth, setAuth }) => {
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell {assetType === 'stock' ? 'Stock' : 'Crypto'}</h3>
                         <form onSubmit={(e) => {
                             e.preventDefault();
-                            const stockId = e.target.stock.value;
+                            const stockName = e.target.stockName.value;
                             const amount = parseInt(e.target.amount.value);
                             const price = parseFloat(e.target.price.value);
-                            handleSellStock(stockId, amount, price);
+                            handleSellStock(stockName, amount, price);
                         }}>
                             <div className="mb-4">
-                                <label className="block text-gray-300 text-sm font-bold mb-2">Select Stock:</label>
-                                <select name="stock" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required>
-                                    {teamState.stocks.map(stock => (
-                                        <option key={stock._id} value={stock._id}>
-                                            {stock.name} ({stock.amount} units)
-                                        </option>
-                                    ))}
-                                </select>
+                                <label className="block text-gray-300 text-sm font-bold mb-2">Stock Name:</label>
+                                <input type="text" name="stockName" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
                             </div>
                             <div className="mb-4">
                                 <label className="block text-gray-300 text-sm font-bold mb-2">Amount to Sell:</label>

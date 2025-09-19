@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getGameState, handlePayay, handleSmallDeal, handleBigDeal, getDeals, handleBuyStock, handleSellStock, handleBuyCrypto, handleAssetFreeze, handlePenalty, handleChance, handleRoll, handleBorrowLoan, handleRepayLoan, setMarketMode, deductOrAddCash, toggleVacation, setNextPaydayTax } = require('../controllers/gameController');
+const { getGameState, handlePayday, handleSmallDeal, handleBigDeal, getDeals, handleBuyStock, handleSellStock, handleBuyCrypto, handleAssetFreeze, handlePenalty, handleChance, handleRoll, handleBorrowLoan, handleRepayLoan, setMarketMode, deductOrAddCash, toggleVacation, setNextPaydayTax } = require('../controllers/gameController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.post('/tax/next', protect, setNextPaydayTax);
