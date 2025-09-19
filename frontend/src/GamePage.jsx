@@ -48,6 +48,7 @@ const GamePage = ({ auth, setAuth }) => {
     const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
     const [loanType, setLoanType] = useState('');
     const [assetType, setAssetType] = useState('');
+    const [assetAction, setAssetAction] = useState('buy');
     const [dealType, setDealType] = useState('');
     const [isPenaltyDialogOpen, setIsPenaltyDialogOpen] = useState(false);
     const [penalties, setPenalties] = useState([]);
@@ -205,6 +206,11 @@ const GamePage = ({ auth, setAuth }) => {
         await handleAction(endpoint, { name, amount, price, loanAmount });
     };
 
+    const handleSellStock = async (stockId, amount, price) => {
+        setIsAssetModalOpen(false);
+        await handleAction('stock/sell', { stockId, amount, price });
+    };
+
     const handleLoanAction = async (amount, repayType) => {
         setIsLoanModalOpen(false);
         // Repay loan endpoint with type
@@ -235,8 +241,9 @@ const GamePage = ({ auth, setAuth }) => {
         setIsDealModalOpen(true);
     };
 
-    const openAssetModal = (type) => {
+    const openAssetModal = (type, action = 'buy') => {
         setAssetType(type);
+        setAssetAction(action);
         setIsAssetModalOpen(true);
         setAssetLoanAmount('');
     };
@@ -332,7 +339,7 @@ const GamePage = ({ auth, setAuth }) => {
                 )}
             </div>
             <main className="w-full max-w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 lg:gap-6">
-                <div className="bg-gray-800 border border-gray-700 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-6 flex flex-col justify-between min-w-0">
+                <div className="bg-gray-800 border border-gray-700 p-3 sm:p-4 md:p-6 lg:p-8 rounded-2xl shadow-lg space-y-6 flex flex-col justify-between min-w-0">
                     <div>
                         <div className="bg-gray-900 p-4 rounded-xl shadow-inner mb-4 flex justify-between items-center">
                             <div>
@@ -348,10 +355,27 @@ const GamePage = ({ auth, setAuth }) => {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
                             <button onClick={() => openDealModal('small')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Small Deal</button>
                             <button onClick={() => openDealModal('big')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Big Deal</button>
-                            <button onClick={() => openAssetModal('stock')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Stock</button>
+                            <button onClick={() => openAssetModal('stock', 'buy')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Buy Stock</button>
+                            <button onClick={() => openAssetModal('stock', 'sell')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Sell Stock</button>
                             <button onClick={() => openAssetModal('crypto')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Crypto</button>
                             <button onClick={() => handlePenaltyClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-red-600 hover:bg-red-700 transition-colors shadow-md">Penalty</button>
                             <button onClick={() => handleChanceClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">Chance</button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
+                            <button
+                                onClick={() => handleAction('future')}
+                                disabled={teamState.future > 0}
+                                className="py-2 px-2 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md disabled:bg-gray-500"
+                            >
+                                Future {teamState.future > 0 && `(${teamState.future})`}
+                            </button>
+                            <button
+                                onClick={() => handleAction('options')}
+                                disabled={teamState.options > 0}
+                                className="py-2 px-2 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md disabled:bg-gray-500"
+                            >
+                                Options {teamState.options > 0 && `(${teamState.options})`}
+                            </button>
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:gap-3 mb-4">
                             <button onClick={openCashModal} className="py-2 px-2 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md">Deduct/Add Cash</button>
@@ -602,7 +626,7 @@ const GamePage = ({ auth, setAuth }) => {
                 </div>
             )}
 
-            {isAssetModalOpen && (
+            {isAssetModalOpen && assetAction === 'buy' && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
                     <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Buy {assetType === 'stock' ? 'Stock' : 'Crypto'}</h3>
@@ -639,6 +663,48 @@ const GamePage = ({ auth, setAuth }) => {
                                 </button>
                                 <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-blue-600 hover:bg-blue-700">
                                     Buy
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isAssetModalOpen && assetAction === 'sell' && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                        <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell {assetType === 'stock' ? 'Stock' : 'Crypto'}</h3>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const stockId = e.target.stock.value;
+                            const amount = parseInt(e.target.amount.value);
+                            const price = parseFloat(e.target.price.value);
+                            handleSellStock(stockId, amount, price);
+                        }}>
+                            <div className="mb-4">
+                                <label className="block text-gray-300 text-sm font-bold mb-2">Select Stock:</label>
+                                <select name="stock" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required>
+                                    {teamState.stocks.map(stock => (
+                                        <option key={stock._id} value={stock._id}>
+                                            {stock.name} ({stock.amount} units)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-300 text-sm font-bold mb-2">Amount to Sell:</label>
+                                <input type="number" name="amount" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required min="1" />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-300 text-sm font-bold mb-2">Current Price:</label>
+                                <input type="number" name="price" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required min="0" />
+                            </div>
+                            <div className="flex justify-end space-x-2">
+                                <button type="button" onClick={() => setIsAssetModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
+                                    Cancel
+                                </button>
+                                <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-red-600 hover:bg-red-700">
+                                    Sell
                                 </button>
                             </div>
                         </form>

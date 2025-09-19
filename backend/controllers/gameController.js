@@ -265,16 +265,27 @@ exports.handlePayday = async (req, res) => {
     } else {
       teamState.cash += netPaydayIncome;
     }
-  addLogEntry(teamState.tableId, `Team ${teamState.teamName}: You received a net payday of ${netPaydayIncome}. ${tax > 0 ? `Tax deducted: ${tax}` : ''}`);
+    addLogEntry(teamState.tableId, `Team ${teamState.teamName}: You received a net payday of ${netPaydayIncome}. ${tax > 0 ? `Tax deducted: ${tax}` : ''}`);
   }
+
+    if (teamState.future > 0) {
+      teamState.future -= 1;
+      if (teamState.future === 0) {
+        addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Future has expired.`);
+      }
+    }
+    if (teamState.options > 0) {
+      teamState.options -= 1;
+      if (teamState.options === 0) {
+        addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Options has expired.`);
+      }
+    }
 
     await teamState.save();
     
     const allTeams = await Team.find({ tableId: teamState.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: teamState.tableId }).sort({ timestamp: -1 });
-    res.status(200).json({ teams: allTeams, logs });
-
-  } catch (error) {
+    res.status(200).json({ teams: allTeams, logs });  } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
@@ -702,6 +713,94 @@ exports.handleRepayLoan = async (req, res) => {
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
     res.status(200).json({ teams: allTeams, logs });
 
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.handleFuture = async (req, res) => {
+  try {
+    const { teamId } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+
+    if (team.future > 0) {
+      return res.status(400).json({ message: 'Future is already active.' });
+    }
+
+    team.future = 8;
+    await team.save();
+
+    addLogEntry(team.tableId, `Team ${team.teamName} has activated Future. It will be active for 8 paydays.`);
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.handleOptions = async (req, res) => {
+  try {
+    const { teamId } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+
+    if (team.options > 0) {
+      return res.status(400).json({ message: 'Options is already active.' });
+    }
+
+    team.options = 8;
+    await team.save();
+
+    addLogEntry(team.tableId, `Team ${team.teamName} has activated Options. It will be active for 8 paydays.`);
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.handleSellStock = async (req, res) => {
+  try {
+    const { teamId, stockId, amount, price } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+
+    const stockIndex = team.stocks.findIndex(s => s._id.toString() === stockId);
+    if (stockIndex === -1) {
+      return res.status(404).json({ message: 'Stock not found in your portfolio.' });
+    }
+
+    const stock = team.stocks[stockIndex];
+    if (amount > stock.amount) {
+      return res.status(400).json({ message: 'You do not have enough units to sell.' });
+    }
+
+    const saleValue = price * amount;
+    team.cash += saleValue;
+    stock.amount -= amount;
+
+    // Update assets: remove the value of the sold stock
+    team.assets -= stock.purchasePrice * amount;
+
+    if (stock.amount === 0) {
+      team.stocks.splice(stockIndex, 1);
+    }
+
+    await team.save();
+
+    addLogEntry(team.tableId, `Team ${team.teamName} sold ${amount} units of ${stock.name} for ${saleValue}.`);
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
