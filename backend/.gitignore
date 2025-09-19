@@ -1,0 +1,18 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Seeder scripts
+seed_deals.js
+seed_delete_tablelogs.js
+seed_penalties.js
+seed_chances.js
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

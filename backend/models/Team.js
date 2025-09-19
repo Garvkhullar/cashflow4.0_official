@@ -52,6 +52,10 @@ const teamSchema = new mongoose.Schema({
 
   // Flag for next payday tax
   nextPaydayTax: { type: Boolean, default: false },
+
+  // Penalties and Chances
+  penalties: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Penalty' }],
+  chances: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chance' }],
 });
 
 const Team = mongoose.model('Team', teamSchema);

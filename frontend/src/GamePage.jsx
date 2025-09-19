@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './index.css';
 
-const backendUrl = 'http://localhost:5000/api';
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api';
 
 const formatCurrency = (number) => {
     const formatter = new Intl.NumberFormat('en-IN', {
@@ -48,6 +48,13 @@ const GamePage = ({ auth, setAuth }) => {
     const [loanType, setLoanType] = useState('');
     const [assetType, setAssetType] = useState('');
     const [dealType, setDealType] = useState('');
+    const [isPenaltyDialogOpen, setIsPenaltyDialogOpen] = useState(false);
+    const [penalties, setPenalties] = useState([]);
+    const [selectedPenaltyId, setSelectedPenaltyId] = useState('');
+    const [customPenaltyAmount, setCustomPenaltyAmount] = useState('');
+    const [isChanceDialogOpen, setIsChanceDialogOpen] = useState(false);
+    const [chances, setChances] = useState([]);
+    const [selectedChanceId, setSelectedChanceId] = useState('');
 
     const fetchGameState = async () => {
         try {
@@ -82,6 +89,29 @@ const GamePage = ({ auth, setAuth }) => {
         }
     };
 
+    const fetchPenalties = async () => {
+        try {
+            const { data } = await axios.get(`${backendUrl}/penalties`, {
+                headers: { Authorization: `Bearer ${auth.token}` }
+            });
+            setPenalties(data.penalties);
+        } catch (error) {
+            console.error("Error fetching penalties:", error);
+            showMessage("Failed to load penalties.", "error");
+        }
+    };
+
+    const fetchChances = async () => {
+        try {
+            const { data } = await axios.get(`${backendUrl}/chances`, {
+                headers: { Authorization: `Bearer ${auth.token}` }
+            });
+            setChances(data.chances);
+        } catch (error) {
+            showMessage('Failed to load chances', 'error');
+        }
+    };
+
     useEffect(() => {
         fetchGameState();
         const loadDeals = async () => {
@@ -91,6 +121,8 @@ const GamePage = ({ auth, setAuth }) => {
             setAvailableBigDeals(bigDeals);
         };
         loadDeals();
+        fetchPenalties();
+        fetchChances();
 
         const interval = setInterval(fetchGameState, 5000);
         return () => clearInterval(interval);
@@ -206,6 +238,40 @@ const GamePage = ({ auth, setAuth }) => {
         setIsLoanModalOpen(true);
     };
 
+    const handlePenaltyClick = (team) => {
+        // Open penalty dialog and pre-fill with team's current penalty details if any
+        setIsPenaltyDialogOpen(true);
+        if (team.penalty) {
+            setSelectedPenaltyId(team.penalty._id);
+            setCustomPenaltyAmount(team.penalty.amount);
+        } else {
+            setSelectedPenaltyId('');
+            setCustomPenaltyAmount('');
+        }
+    };
+
+    const handleChanceClick = async () => {
+        await fetchChances();
+        setIsChanceDialogOpen(true);
+        setSelectedChanceId('');
+    };
+
+    const handleApplyPenalty = async () => {
+        if (!selectedPenaltyId) return;
+        setIsPenaltyDialogOpen(false);
+        await handleAction('penalty', {
+            penaltyId: selectedPenaltyId,
+            amount: customPenaltyAmount || penalties.find(p => p._id === selectedPenaltyId)?.amount
+        });
+        setCustomPenaltyAmount('');
+    };
+
+    const handleApplyChance = async () => {
+        if (!selectedChanceId) return;
+        setIsChanceDialogOpen(false);
+        await handleAction('chance', { chanceId: selectedChanceId });
+    };
+
     const teamState = teams[currentTeamIndex] || {};
     const totalLiabilities = (teamState.smallDealLoan || 0) + (teamState.bigDealLoan || 0) + (teamState.stocksLoan || 0) + (teamState.cryptoLoan || 0) + (teamState.personalLoan || 0);
     const totalExpenses = teamState.expenses;
@@ -220,7 +286,7 @@ const GamePage = ({ auth, setAuth }) => {
     const dealsToDisplay = dealType === 'small' ? availableSmallDeals : availableBigDeals;
 
     return (
-        <div className="w-full min-h-screen flex items-center justify-center p-4 md:p-8">
+        <div className="w-full min-h-screen flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-gray-100 via-blue-50 to-purple-100">
             <main className="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-2xl shadow-lg space-y-6 flex flex-col justify-between">
                     <div>
@@ -231,18 +297,33 @@ const GamePage = ({ auth, setAuth }) => {
                             </div>
                             <button onClick={handleLogout} className="py-2 px-4 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-md">Logout</button>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <button onClick={() => handleAction('payday')} className="w-full py-4 rounded-xl font-bold text-lg text-white bg-blue-500 hover:bg-blue-600 transition-colors shadow-md">Payday</button>
-                            <button onClick={() => handleAction('roll')} className="w-full py-4 rounded-xl font-bold text-lg text-white bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-md">Roll</button>
+                        {/* Organized button grid */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            <button onClick={() => handleAction('payday')} className="py-3 rounded-xl font-bold text-base text-white bg-blue-500 hover:bg-blue-600 transition-colors shadow-md col-span-2">Payday</button>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <button onClick={() => handleAction('penalty')} className="w-full py-2 px-4 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Penalty</button>
-                            <button onClick={() => handleAction('chance')} className="w-full py-2 px-4 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Chance</button>
-                            <button onClick={() => openDealModal('small')} className="w-full py-2 px-4 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Small Deal</button>
-                            <button onClick={() => openDealModal('big')} className="w-full py-2 px-4 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Big Deal</button>
-                            <button onClick={() => openAssetModal('stock')} className="w-full py-2 px-4 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Stock</button>
-                            <button onClick={() => openAssetModal('crypto')} className="w-full py-2 px-4 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Crypto</button>
-                            <button onClick={openCashModal} className="w-full py-2 px-4 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md col-span-2">Deduct/Add Cash</button>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                            <button onClick={() => openDealModal('small')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Small Deal</button>
+                            <button onClick={() => openDealModal('big')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Big Deal</button>
+                            <button onClick={() => openAssetModal('stock')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Stock</button>
+                            <button onClick={() => openAssetModal('crypto')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Crypto</button>
+                            <button onClick={() => handlePenaltyClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-red-500 hover:bg-red-600 transition-colors shadow-md">Penalty</button>
+                            <button onClick={() => handleChanceClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-blue-500 hover:bg-blue-600 transition-colors shadow-md">Chance</button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 mb-4">
+                            <button onClick={openCashModal} className="py-2 px-2 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md">Deduct/Add Cash</button>
+                        </div>
+                        <div className="flex justify-center items-center gap-2 mt-2">
+                            <button
+                                onClick={() => setCurrentTeamIndex(i => Math.max(0, i - 1))}
+                                disabled={currentTeamIndex === 0}
+                                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50"
+                            >Prev</button>
+                            <span className="font-bold text-lg">{teams[currentTeamIndex]?.teamName || "No Team"}</span>
+                            <button
+                                onClick={() => setCurrentTeamIndex(i => Math.min(teams.length - 1, i + 1))}
+                                disabled={currentTeamIndex === teams.length - 1}
+                                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50"
+                            >Next</button>
                         </div>
                     </div>
                     <div className="space-y-4">
@@ -251,48 +332,47 @@ const GamePage = ({ auth, setAuth }) => {
                             <button onClick={() => openLoanModal('repay')} className="w-full py-3 rounded-xl text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors shadow-md">Repay Loan</button>
                         </div>
                         <div className="grid grid-cols-3 gap-4">
-                            <button onClick={() => handleAction('freeze')} className="w-full py-3 rounded-xl text-white font-semibold bg-orange-500 hover:bg-orange-600 transition-colors shadow-md text-sm">Asset Freeze</button>
+                            <button onClick={() => handleAction('freeze')} className="w-full py-3 rounded-xl text-white font-semibold bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-md text-base flex items-center justify-center gap-2">
+                                <span role="img" aria-label="lock" className="text-lg">🔒</span>
+                                Asset Freeze
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl shadow-lg space-y-6">
                     <div className="grid grid-cols-3 gap-2">
                         {teams.map((team, index) => (
-                            <div key={team._id} className="flex flex-col items-center">
-                                <button onClick={() => setCurrentTeamIndex(index)} className={`w-full py-2 rounded-xl text-white font-semibold ${currentTeamIndex === index ? 'bg-indigo-600' : 'bg-indigo-500'} hover:bg-indigo-600 transition-colors shadow-md`}>
-                                    {team.teamName}
-                                </button>
-                                <div className="flex space-x-2 mt-2 items-center">
-                                    <button
-                                        onClick={async () => { await handleAction('vacation/toggle', { status: true }); }}
-                                        className={`flex items-center px-2 py-1 rounded text-xs font-bold transition-colors duration-150 shadow ${team.isVacationOn ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-                                        title="Turn Vacation ON (tax exempt)"
-                                    >
-                                        <span className="mr-1">🌴</span> ON
-                                    </button>
-                                    <button
-                                        onClick={async () => { await handleAction('vacation/toggle', { status: false }); }}
-                                        className={`flex items-center px-2 py-1 rounded text-xs font-bold transition-colors duration-150 shadow ${!team.isVacationOn ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-                                        title="Turn Vacation OFF (tax applies)"
-                                    >
-                                        <span className="mr-1">🏖️</span> OFF
-                                    </button>
+                            <div key={team._id} className="w-full mb-4 p-4 rounded-xl shadow bg-white flex flex-col items-center border border-gray-200">
+                                {/* Team Name at Top */}
+                                <span className="block text-lg font-bold text-indigo-700 mb-2">{team.teamName}</span>
+                                {/* Vacation Status below Team Name */}
+                                <span className={`mb-2 px-3 py-1 rounded-full text-xs font-bold ${team.isVacationOn ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`} title={team.isVacationOn ? 'Vacation ON: Tax exempt' : 'Vacation OFF: Tax applies'}>
+                                    {team.isVacationOn ? `🌴 Vacation ON (${team.vacationPaydaysLeft} left, tax exempt)` : '🏖️ Vacation OFF (tax applies)'}
+                                </span>
+                                {/* Switch below status */}
+                                <label className="flex items-center cursor-pointer mb-3">
+                                    <div className="relative">
+                                        <input
+                                            type="checkbox"
+                                            checked={team.isVacationOn}
+                                            onChange={async (e) => {
+                                                await handleAction('vacation/toggle', { status: !team.isVacationOn });
+                                            }}
+                                            className="sr-only"
+                                        />
+                                        <div className={`block w-12 h-7 rounded-full ${team.isVacationOn ? 'bg-green-400' : 'bg-gray-300'} transition-colors`}></div>
+                                        <div className={`dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full shadow transition-transform duration-200 ${team.isVacationOn ? 'translate-x-5' : ''}`}></div>
+                                    </div>
+                                </label>
+                                <div className="w-full flex flex-col gap-2 mt-2">
                                     <button
                                         onClick={async () => { await handleAction('tax/next', {}); }}
-                                        className="px-2 py-1 rounded text-xs font-bold bg-orange-500 text-white"
+                                        className="w-full px-4 py-2 rounded-lg text-xs font-bold bg-orange-500 text-white shadow"
                                         title="Apply 13% tax on next payday"
                                     >TAX</button>
-                                    {team.isVacationOn ? (
-                                        <span className="ml-2 px-2 py-1 rounded-full bg-green-100 text-green-800 font-bold text-xs" title="Vacation ON: Tax exempt">Vacation ON</span>
-                                    ) : (
-                                        <span className="ml-2 px-2 py-1 rounded-full bg-gray-100 text-gray-800 font-bold text-xs" title="Vacation OFF: Tax applies">Vacation OFF</span>
-                                    )}
                                 </div>
-                                {team.isVacationOn && (
-                                    <span className="text-xs text-green-700 font-bold mt-1">Vacation ON ({team.vacationPaydaysLeft} paydays left)</span>
-                                )}
                                 {team.nextPaydayTax && (
-                                    <span className="text-xs text-orange-700 font-bold mt-1">Next payday: 13% tax will apply</span>
+                                    <span className="text-xs text-orange-700 font-bold mt-2">Next payday: 13% tax will apply</span>
                                 )}
                             </div>
                         ))}
@@ -387,9 +467,9 @@ const GamePage = ({ auth, setAuth }) => {
                 </div>
                 <div className="bg-white p-6 rounded-2xl shadow-lg space-y-4 flex flex-col">
                     <h2 className="text-2xl font-bold text-gray-800">Table Logs</h2>
-                    <div className="flex-grow bg-gray-100 p-4 rounded-xl shadow-inner text-sm text-gray-700 overflow-y-auto max-h-96">
+                    <div className="flex-grow bg-gray-100 p-4 rounded-xl shadow-inner text-sm text-gray-700 overflow-y-auto h-full min-h-[500px] max-h-[80vh]">
                         {logs.length > 0 ? logs.map((log, index) => (
-                            <p key={index} className="mb-2">{log}</p>
+                            <p key={index} className="mb-2 break-words whitespace-pre-line">{log}</p>
                         )) : (
                             <p className="text-center text-gray-400">No transaction history available.</p>
                         )}
@@ -600,6 +680,69 @@ const GamePage = ({ auth, setAuth }) => {
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        )}
+
+        {/* Penalty Selection Dialog */}
+        {isPenaltyDialogOpen && (
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+                    <h3 className="text-2xl font-bold text-center mb-4 text-gray-800">Select Penalty</h3>
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Penalty:</label>
+                        <select value={selectedPenaltyId} onChange={e => {
+                            setSelectedPenaltyId(e.target.value);
+                            setCustomPenaltyAmount('');
+                        }} className="w-full p-2 border rounded-md text-gray-700">
+                            <option value="" disabled>-- Select a penalty --</option>
+                            {penalties.map(penalty => (
+                                <option key={penalty._id} value={penalty._id}>{penalty.name} (₹{penalty.amount})</option>
+                            ))}
+                        </select>
+                    </div>
+                    {selectedPenaltyId && (
+                        <div className="bg-gray-100 p-4 rounded-lg mb-4 text-gray-800">
+                            <p><strong>Description:</strong> {penalties.find(p => p._id === selectedPenaltyId)?.description}</p>
+                            <p><strong>Default Amount:</strong> ₹{penalties.find(p => p._id === selectedPenaltyId)?.amount}</p>
+                            <div className="mt-2">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">Enter Penalty Amount:</label>
+                                <input type="number" min="1" className="w-full p-2 border rounded-md text-gray-700" value={customPenaltyAmount || penalties.find(p => p._id === selectedPenaltyId)?.amount || ''} onChange={e => setCustomPenaltyAmount(e.target.value)} />
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex justify-end space-x-2 mt-4">
+                        <button onClick={() => setIsPenaltyDialogOpen(false)} className="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md hover:bg-gray-400">Cancel</button>
+                        <button onClick={handleApplyPenalty} disabled={!selectedPenaltyId} className={`font-semibold py-2 px-4 rounded-md text-white transition-colors ${!selectedPenaltyId ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>Apply</button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Chance Selection Dialog */}
+        {isChanceDialogOpen && (
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+                    <h3 className="text-2xl font-bold text-center mb-4 text-gray-800">Select Chance</h3>
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Chance:</label>
+                        <select value={selectedChanceId} onChange={e => setSelectedChanceId(e.target.value)} className="w-full p-2 border rounded-md text-gray-700">
+                            <option value="" disabled>-- Select a chance --</option>
+                            {chances.map(chance => (
+                                <option key={chance._id} value={chance._id}>{chance.name} (₹{chance.amount})</option>
+                            ))}
+                        </select>
+                    </div>
+                    {selectedChanceId && (
+                        <div className="bg-gray-100 p-4 rounded-lg mb-4 text-gray-800">
+                            <p><strong>Description:</strong> {chances.find(c => c._id === selectedChanceId)?.description}</p>
+                            <p><strong>Amount:</strong> ₹{chances.find(c => c._id === selectedChanceId)?.amount}</p>
+                        </div>
+                    )}
+                    <div className="flex justify-end space-x-2 mt-4">
+                        <button onClick={() => setIsChanceDialogOpen(false)} className="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md hover:bg-gray-400">Cancel</button>
+                        <button onClick={handleApplyChance} disabled={!selectedChanceId} className={`font-semibold py-2 px-4 rounded-md text-white transition-colors ${!selectedChanceId ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>Apply</button>
+                    </div>
                 </div>
             </div>
         )}

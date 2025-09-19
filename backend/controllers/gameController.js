@@ -538,49 +538,53 @@ exports.handleAssetFreeze = async (req, res) => {
 };
 
 exports.handlePenalty = async (req, res) => {
-    try {
-        const { teamId } = req.body;
-        const team = await Team.findById(teamId);
-        if (!team) return res.status(404).json({ message: 'Team not found' });
-        
-        team.cash -= 10000;
-        await team.save();
+  try {
+    const { teamId, penaltyId, amount } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
 
-        addLogEntry(team.tableId, `Team ${team.teamName} paid a penalty of 10,000.`);
+    const Penalty = require('../models/Penalty');
+    const penalty = await Penalty.findById(penaltyId);
+    if (!penalty) return res.status(404).json({ message: 'Penalty not found' });
 
-        const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
-        const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
-        res.status(200).json({ teams: allTeams, logs });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    // Use custom amount if provided, else default penalty amount
+    const penaltyAmount = amount ? parseInt(amount) : penalty.amount;
+    team.cash -= penaltyAmount;
+    await team.save();
+
+    addLogEntry(team.tableId, `Team ${team.teamName} penalty: ${penalty.name} - ₹${penaltyAmount}. ${penalty.description}`);
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
 exports.handleChance = async (req, res) => {
-    try {
-        const { teamId } = req.body;
-        const team = await Team.findById(teamId);
-        if (!team) return res.status(404).json({ message: 'Team not found' });
-        
-        const chanceCards = [
-            { title: "Bonus!", effect: () => { team.cash += 50000; } },
-            { title: "Penalty", effect: () => { team.cash -= 20000; } },
-        ];
-        const card = chanceCards[Math.floor(Math.random() * chanceCards.length)];
-        
-        card.effect();
-        await team.save();
-        
-        addLogEntry(team.tableId, `Team ${team.teamName} drew a Chance card: "${card.title}"`);
-        
-        const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
-        const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
-        res.status(200).json({ teams: allTeams, logs, message: `You drew a Chance card: "${card.title}"` });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
-    }
+  try {
+    const { teamId, chanceId } = req.body;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+
+    const Chance = require('../models/Chance');
+    const chance = await Chance.findById(chanceId);
+    if (!chance) return res.status(404).json({ message: 'Chance not found' });
+
+    team.cash += chance.amount;
+    await team.save();
+
+    addLogEntry(team.tableId, `Team ${team.teamName} chance: ${chance.name} +₹${chance.amount}. ${chance.description}`);
+
+    const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
+    const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
+    res.status(200).json({ teams: allTeams, logs, message: `You drew a Chance card: "${chance.name}"` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
 exports.handleBorrowLoan = async (req, res) => {
