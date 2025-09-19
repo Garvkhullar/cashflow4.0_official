@@ -43,6 +43,11 @@ const teamSchema = new mongoose.Schema({
     purchasePrice: { type: Number, required: true },
   }],
 
+
+  // Market mode multipliers
+  paydayMultiplier: { type: Number, default: 1.0 },
+  loanInterestRate: { type: Number, default: 0.13 },
+
   // Vacation status and exemption
   isVacationOn: { type: Boolean, default: false },
   vacationPaydaysLeft: { type: Number, default: 0 },

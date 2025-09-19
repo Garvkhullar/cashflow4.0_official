@@ -74,6 +74,11 @@ exports.deductOrAddCash = async (req, res) => {
 // Global market mode state
 let marketMode = 'normal'; // 'bull', 'bear', 'normal'
 
+// Expose current market mode
+exports.getMarketMode = (req, res) => {
+  res.json({ mode: marketMode });
+};
+
 exports.setMarketMode = async (req, res) => {
   try {
     const { mode } = req.body;
@@ -82,6 +87,7 @@ exports.setMarketMode = async (req, res) => {
     }
     if (mode === 'bull') marketMode = 'bull';
     else if (mode === 'bear') marketMode = 'bear';
+    else if (mode === 'bull-stop' || mode === 'bear-stop') marketMode = 'normal';
     else marketMode = 'normal';
 
     // Update all teams' payday/interest rates
@@ -99,7 +105,11 @@ exports.setMarketMode = async (req, res) => {
       }
       await team.save();
     }
-    res.status(200).json({ message: `Market mode set to ${marketMode}` });
+    // Log market mode change for each unique tableId
+    const uniqueTableIds = [...new Set(teams.map(t => t.tableId?.toString()).filter(Boolean))];
+    const logMsg = `Market mode set to ${marketMode}`;
+    await Promise.all(uniqueTableIds.map(tableId => TableLog.create({ tableId, message: logMsg })));
+    res.status(200).json({ message: logMsg });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -164,8 +174,8 @@ exports.handlePayday = async (req, res) => {
     }
   }
 
-  // Apply market mode payday multiplier
-  const paydayMultiplier = teamState.paydayMultiplier || 1.0;
+  // Apply market mode payday multiplier (persisted on team)
+  const paydayMultiplier = typeof teamState.paydayMultiplier === 'number' ? teamState.paydayMultiplier : 1.0;
 
     // Process EMIs for small deals
     let emiExpenseTotal = 0;
@@ -209,9 +219,10 @@ exports.handlePayday = async (req, res) => {
   personalLoanInterest = teamState.personalLoan * 0.13;
     }
     teamState.expenses = baseExpenses + emiExpenseTotal + personalLoanInterest;
+  // Calculate net payday (income + passiveIncome - expenses), then apply paydayMultiplier
   const totalIncome = teamState.income + teamState.passiveIncome;
   const totalExpenses = teamState.expenses;
-  let netPaydayIncome = totalIncome - totalExpenses;
+  let netPaydayIncome = (totalIncome - totalExpenses) * paydayMultiplier;
   if (personalLoanInterest > 0) {
     addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Personal loan interest of ${personalLoanInterest.toFixed(2)} added to expenses.`);
   }
