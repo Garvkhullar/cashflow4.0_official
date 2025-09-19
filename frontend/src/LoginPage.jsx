@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const backendUrl = 'http://localhost:5000/api';
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://cashflow-1-mdwi.onrender.com/api';
 
 const showMessage = (message, type = 'success') => {
     const messageBox = document.getElementById('message-box');

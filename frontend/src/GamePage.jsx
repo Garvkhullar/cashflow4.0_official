@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './index.css';
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api';
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://cashflow-1-mdwi.onrender.com/api';
 
 const formatCurrency = (number) => {
     const formatter = new Intl.NumberFormat('en-IN', {

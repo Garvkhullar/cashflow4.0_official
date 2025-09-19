@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 
-const backendUrl = 'http://localhost:5000/api';
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://cashflow-1-mdwi.onrender.com/api';
 
 const AdminPage = ({ auth }) => {
     if (!auth || auth.role !== 'admin') return null;
