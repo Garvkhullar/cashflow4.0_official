@@ -1,3 +1,24 @@
+// Team login with teamName and 4-digit code
+exports.loginTeam = async (req, res) => {
+  const { teamName, code } = req.body;
+  try {
+    const team = await Team.findOne({ teamName, code });
+    if (!team) {
+      return res.status(401).json({ message: 'Invalid team name or code' });
+    }
+    // Issue a JWT for the team (with teamId and role 'team')
+    const token = jwt.sign({ id: team._id, role: 'team' }, process.env.JWT_SECRET, { expiresIn: '2h' });
+    res.json({
+      _id: team._id,
+      teamName: team.teamName,
+      tableId: team.tableId,
+      role: 'team',
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 const Admin = require('../models/Admin');
 exports.loginAdmin = async (req, res) => {
   const { username, password } = req.body;
@@ -36,19 +57,23 @@ exports.registerTable = async (req, res) => {
     }
     const newTable = await Table.create({ username, password, role });
 
+    // Helper to generate a random 4-digit code as a string
+    const genCode = () => Math.floor(1000 + Math.random() * 9000).toString();
+
     const teams = await Team.insertMany([
-      { tableId: newTable._id, teamName: team1Name },
-      { tableId: newTable._id, teamName: team2Name },
-      { tableId: newTable._id, teamName: team3Name },
+      { tableId: newTable._id, tablename: username, teamName: team1Name, code: genCode() },
+      { tableId: newTable._id, tablename: username, teamName: team2Name, code: genCode() },
+      { tableId: newTable._id, tablename: username, teamName: team3Name, code: genCode() },
     ]);
 
     newTable.teams = teams.map(team => team._id);
     await newTable.save();
 
+    // Return the team codes for login
     res.status(201).json({
       _id: newTable._id,
       username: newTable.username,
-      teams: newTable.teams,
+      teams: teams.map(t => ({ _id: t._id, teamName: t.teamName, code: t.code })),
       role: newTable.role,
       token: generateToken(newTable._id, newTable.role),
     });

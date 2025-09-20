@@ -1,8 +1,11 @@
+
 const mongoose = require('mongoose');
 
 const teamSchema = new mongoose.Schema({
   tableId: { type: mongoose.Schema.Types.ObjectId, ref: 'Table', required: true },
+  tablename: { type: String, required: true }, // Stores the table username
   teamName: { type: String, required: true },
+  code: { type: String, required: true }, // 4-digit login code
   cash: { type: Number, default: 500000 },
   income: { type: Number, default: 450000 },
   passiveIncome: { type: Number, default: 0 },
@@ -47,8 +50,6 @@ const teamSchema = new mongoose.Schema({
   // Market mode multipliers
   paydayMultiplier: { type: Number, default: 1.0 },
   loanInterestRate: { type: Number, default: 0.13 },
-  future: { type: Number, default: 0 },
-  options: { type: Number, default: 0 },
 
   // Vacation status and exemption
   isVacationOn: { type: Boolean, default: false },
@@ -61,8 +62,24 @@ const teamSchema = new mongoose.Schema({
   nextPaydayTax: { type: Boolean, default: false },
 
   // Penalties and Chances
-  penalties: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Penalty' }],
-  chances: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chance' }],
+    penalties: [
+    {
+      penaltyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Penalty' },
+      name: String,
+      amount: Number,
+      date: { type: Date, default: Date.now }
+    }
+  ],
+  chances: [
+    {
+      chanceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chance' },
+      name: String,
+      amount: Number,
+      date: { type: Date, default: Date.now }
+    }
+  ],
+  futureCounter: { type: Number, default: 0 },
+  optionsCounter: { type: Number, default: 0 },
 });
 
 const Team = mongoose.model('Team', teamSchema);

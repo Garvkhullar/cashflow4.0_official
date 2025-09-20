@@ -48,7 +48,6 @@ const GamePage = ({ auth, setAuth }) => {
     const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
     const [loanType, setLoanType] = useState('');
     const [assetType, setAssetType] = useState('');
-    const [assetAction, setAssetAction] = useState('buy');
     const [dealType, setDealType] = useState('');
     const [isPenaltyDialogOpen, setIsPenaltyDialogOpen] = useState(false);
     const [penalties, setPenalties] = useState([]);
@@ -206,11 +205,6 @@ const GamePage = ({ auth, setAuth }) => {
         await handleAction(endpoint, { name, amount, price, loanAmount });
     };
 
-    const handleSellStock = async (stockName, amount, price) => {
-        setIsAssetModalOpen(false);
-        await handleAction('stock/sell', { stockName, amount, price });
-    };
-
     const handleLoanAction = async (amount, repayType) => {
         setIsLoanModalOpen(false);
         // Repay loan endpoint with type
@@ -241,14 +235,65 @@ const GamePage = ({ auth, setAuth }) => {
         setIsDealModalOpen(true);
     };
 
-    const openAssetModal = (type, action = 'buy') => {
+    const openAssetModal = (type) => {
         setAssetType(type);
-        setAssetAction(action);
         setIsAssetModalOpen(true);
         setAssetLoanAmount('');
     };
     // Asset loan state
     const [assetLoanAmount, setAssetLoanAmount] = useState('');
+
+    // Sell Stocks modal state
+    const [isSellStockModalOpen, setIsSellStockModalOpen] = useState(false);
+    const [sellStockIndex, setSellStockIndex] = useState('');
+    const [sellQuantity, setSellQuantity] = useState('');
+    const [sellPrice, setSellPrice] = useState('');
+
+    // Sell Crypto modal state
+    const [isSellCryptoModalOpen, setIsSellCryptoModalOpen] = useState(false);
+    const [sellCryptoIndex, setSellCryptoIndex] = useState('');
+    const [sellCryptoQuantity, setSellCryptoQuantity] = useState('');
+    const [sellCryptoPrice, setSellCryptoPrice] = useState('');
+
+    const openSellStockModal = () => {
+        setIsSellStockModalOpen(true);
+        setSellStockIndex('');
+        setSellQuantity('');
+        setSellPrice('');
+    };
+
+    const openSellCryptoModal = () => {
+        setIsSellCryptoModalOpen(true);
+        setSellCryptoIndex('');
+        setSellCryptoQuantity('');
+        setSellCryptoPrice('');
+    };
+
+    const handleSellStock = async (e) => {
+        e.preventDefault();
+        if (sellStockIndex === '' || !sellQuantity || !sellPrice) return;
+        const stock = teamState.stocks[sellStockIndex];
+        if (!stock) return;
+        await handleAction('stock/sell', {
+            name: stock.name,
+            quantity: parseInt(sellQuantity),
+            price: parseFloat(sellPrice)
+        });
+        setIsSellStockModalOpen(false);
+    };
+
+    const handleSellCrypto = async (e) => {
+        e.preventDefault();
+        if (sellCryptoIndex === '' || !sellCryptoQuantity || !sellCryptoPrice) return;
+        const crypto = teamState.crypto[sellCryptoIndex];
+        if (!crypto) return;
+        await handleAction('crypto/sell', {
+            name: crypto.name,
+            quantity: parseInt(sellCryptoQuantity),
+            price: parseFloat(sellCryptoPrice)
+        });
+        setIsSellCryptoModalOpen(false);
+    };
 
     // Deduct/Add cash modal state
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
@@ -339,7 +384,7 @@ const GamePage = ({ auth, setAuth }) => {
                 )}
             </div>
             <main className="w-full max-w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 lg:gap-6">
-                <div className="bg-gray-800 border border-gray-700 p-3 sm:p-4 md:p-6 lg:p-8 rounded-2xl shadow-lg space-y-6 flex flex-col justify-between min-w-0">
+                <div className="bg-gray-800 border border-gray-700 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-6 flex flex-col justify-between min-w-0">
                     <div>
                         <div className="bg-gray-900 p-4 rounded-xl shadow-inner mb-4 flex justify-between items-center">
                             <div>
@@ -355,26 +400,134 @@ const GamePage = ({ auth, setAuth }) => {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
                             <button onClick={() => openDealModal('small')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Small Deal</button>
                             <button onClick={() => openDealModal('big')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Big Deal</button>
-                            <button onClick={() => openAssetModal('stock', 'buy')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Buy Stock</button>
-                            <button onClick={() => openAssetModal('stock', 'sell')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Sell Stock</button>
+                            <button onClick={() => openAssetModal('stock')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Stock</button>
+                            <button onClick={openSellStockModal} className="py-2 px-2 rounded-xl text-white font-medium bg-yellow-700 hover:bg-yellow-800 transition-colors shadow-md">Sell Stocks</button>
+                            <button onClick={() => openAssetModal('crypto')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Crypto</button>
+                            <button onClick={openSellCryptoModal} className="py-2 px-2 rounded-xl text-white font-medium bg-yellow-700 hover:bg-yellow-800 transition-colors shadow-md">Sell Crypto</button>
+            {/* Sell Crypto Modal */}
+            {isSellCryptoModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                        <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Crypto</h3>
+                        {teamState.crypto && teamState.crypto.length > 0 ? (
+                            <form onSubmit={handleSellCrypto}>
+                                <div className="mb-4">
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">Select Crypto:</label>
+                                    <select value={sellCryptoIndex} onChange={e => {
+                                        setSellCryptoIndex(e.target.value);
+                                        setSellCryptoQuantity('');
+                                        setSellCryptoPrice('');
+                                    }} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required>
+                                        <option value="" disabled>-- Select a crypto --</option>
+                                        {teamState.crypto.map((crypto, idx) => (
+                                            <option key={idx} value={idx}>{crypto.name} - {crypto.amount} @ {formatCurrency(crypto.purchasePrice)}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {sellCryptoIndex !== '' && teamState.crypto[sellCryptoIndex] && (
+                                    <>
+                                        <div className="mb-4">
+                                            <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.crypto[sellCryptoIndex].amount}):</label>
+                                            <input type="number" min="1" max={teamState.crypto[sellCryptoIndex].amount} value={sellCryptoQuantity} onChange={e => setSellCryptoQuantity(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
+                                        </div>
+                                        <div className="mb-4">
+                                            <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Crypto:</label>
+                                            <input type="number" min="0" value={sellCryptoPrice} onChange={e => setSellCryptoPrice(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
+                                        </div>
+                                    </>
+                                )}
+                                <div className="flex justify-end space-x-2">
+                                    <button type="button" onClick={() => setIsSellCryptoModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" disabled={sellCryptoIndex === '' || !sellCryptoQuantity || !sellCryptoPrice || (sellCryptoIndex !== '' && (parseInt(sellCryptoQuantity) > teamState.crypto[sellCryptoIndex].amount || parseInt(sellCryptoQuantity) <= 0))} className="font-semibold py-2 px-4 rounded-md text-white bg-yellow-700 hover:bg-yellow-800">
+                                        Sell
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="text-gray-300">No crypto to sell.</div>
+                        )}
+                    </div>
+                </div>
+            )}
+            {/* Sell Stocks Modal */}
+            {isSellStockModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                        <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Stocks</h3>
+                        {teamState.stocks && teamState.stocks.length > 0 ? (
+                            <form onSubmit={handleSellStock}>
+                                <div className="mb-4">
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">Select Stock:</label>
+                                    <select value={sellStockIndex} onChange={e => {
+                                        setSellStockIndex(e.target.value);
+                                        setSellQuantity('');
+                                        setSellPrice('');
+                                    }} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required>
+                                        <option value="" disabled>-- Select a stock --</option>
+                                        {teamState.stocks.map((stock, idx) => (
+                                            <option key={idx} value={idx}>{stock.name} - {stock.amount} @ {formatCurrency(stock.purchasePrice)}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {sellStockIndex !== '' && teamState.stocks[sellStockIndex] && (
+                                    <>
+                                        <div className="mb-4">
+                                            <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.stocks[sellStockIndex].amount}):</label>
+                                            <input type="number" min="1" max={teamState.stocks[sellStockIndex].amount} value={sellQuantity} onChange={e => setSellQuantity(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
+                                        </div>
+                                        <div className="mb-4">
+                                            <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Stock:</label>
+                                            <input type="number" min="0" value={sellPrice} onChange={e => setSellPrice(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
+                                        </div>
+                                    </>
+                                )}
+                                <div className="flex justify-end space-x-2">
+                                    <button type="button" onClick={() => setIsSellStockModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" disabled={sellStockIndex === '' || !sellQuantity || !sellPrice || (sellStockIndex !== '' && (parseInt(sellQuantity) > teamState.stocks[sellStockIndex].amount || parseInt(sellQuantity) <= 0))} className="font-semibold py-2 px-4 rounded-md text-white bg-yellow-700 hover:bg-yellow-800">
+                                        Sell
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="text-gray-300">No stocks to sell.</div>
+                        )}
+                    </div>
+                </div>
+            )}
                             <button onClick={() => openAssetModal('crypto')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Crypto</button>
                             <button onClick={() => handlePenaltyClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-red-600 hover:bg-red-700 transition-colors shadow-md">Penalty</button>
                             <button onClick={() => handleChanceClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">Chance</button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
                             <button
-                                onClick={() => handleAction('future')}
-                                disabled={teamState.future > 0}
-                                className="py-2 px-2 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md disabled:bg-gray-500"
+                                onClick={() => {
+                                    if (teamState.futureCounter > 0) {
+                                        if (window.confirm('Do you want to turn off Future?')) {
+                                            handleAction('future/toggle');
+                                        }
+                                    } else {
+                                        handleAction('future/toggle');
+                                    }
+                                }}
+                                className={`py-2 px-2 rounded-xl text-white font-medium transition-colors shadow-md ${teamState.futureCounter > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
                             >
-                                Future {teamState.future > 0 && `(${teamState.future})`}
+                                Future {teamState.futureCounter > 0 ? `(${teamState.futureCounter})` : ''}
                             </button>
                             <button
-                                onClick={() => handleAction('options')}
-                                disabled={teamState.options > 0}
-                                className="py-2 px-2 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md disabled:bg-gray-500"
+                                onClick={() => {
+                                    if (teamState.optionsCounter > 0) {
+                                        if (window.confirm('Do you want to turn off Options?')) {
+                                            handleAction('options/toggle');
+                                        }
+                                    } else {
+                                        handleAction('options/toggle');
+                                    }
+                                }}
+                                className={`py-2 px-2 rounded-xl text-white font-medium transition-colors shadow-md ${teamState.optionsCounter > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
                             >
-                                Options {teamState.options > 0 && `(${teamState.options})`}
+                                Options {teamState.optionsCounter > 0 ? `(${teamState.optionsCounter})` : ''}
                             </button>
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:gap-3 mb-4">
@@ -626,7 +779,7 @@ const GamePage = ({ auth, setAuth }) => {
                 </div>
             )}
 
-            {isAssetModalOpen && assetAction === 'buy' && (
+            {isAssetModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
                     <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Buy {assetType === 'stock' ? 'Stock' : 'Crypto'}</h3>
@@ -663,42 +816,6 @@ const GamePage = ({ auth, setAuth }) => {
                                 </button>
                                 <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-blue-600 hover:bg-blue-700">
                                     Buy
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {isAssetModalOpen && assetAction === 'sell' && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
-                        <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell {assetType === 'stock' ? 'Stock' : 'Crypto'}</h3>
-                        <form onSubmit={(e) => {
-                            e.preventDefault();
-                            const stockName = e.target.stockName.value;
-                            const amount = parseInt(e.target.amount.value);
-                            const price = parseFloat(e.target.price.value);
-                            handleSellStock(stockName, amount, price);
-                        }}>
-                            <div className="mb-4">
-                                <label className="block text-gray-300 text-sm font-bold mb-2">Stock Name:</label>
-                                <input type="text" name="stockName" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-gray-300 text-sm font-bold mb-2">Amount to Sell:</label>
-                                <input type="number" name="amount" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required min="1" />
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-gray-300 text-sm font-bold mb-2">Current Price:</label>
-                                <input type="number" name="price" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required min="0" />
-                            </div>
-                            <div className="flex justify-end space-x-2">
-                                <button type="button" onClick={() => setIsAssetModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
-                                    Cancel
-                                </button>
-                                <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-red-600 hover:bg-red-700">
-                                    Sell
                                 </button>
                             </div>
                         </form>

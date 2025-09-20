@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://cashflow-1-mdwi.onrender.com/api';
@@ -75,6 +75,13 @@ const LoginPage = ({ setAuth }) => {
             };
             const { data } = await axios.post(`${backendUrl}/auth/register`, payload);
             showMessage("Data added successfully!");
+            if (data.teams && Array.isArray(data.teams)) {
+                let msg = 'Team Codes for Login:\n';
+                data.teams.forEach(team => {
+                    msg += `Team: ${team.teamName} | Code: ${team.code}\n`;
+                });
+                alert(msg);
+            }
         } catch (error) {
             showMessage(error.response?.data?.message || 'Failed to add data', 'error');
         }
@@ -86,10 +93,10 @@ const LoginPage = ({ setAuth }) => {
         return `${baseStyle} ${focusStyle}`;
     };
 
+
     return (
         <div className="min-h-screen w-screen bg-gray-50 flex items-center justify-center font-[Inter] p-0 m-0 relative overflow-hidden">
             <div id="message-box" className="fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg transition-all duration-300 transform translate-x-full opacity-0"></div>
-            
             <style>
                 {`
                 @keyframes fadeIn {
@@ -123,22 +130,20 @@ const LoginPage = ({ setAuth }) => {
                 }
                 `}
             </style>
-
             <div className="background-grid absolute inset-0 z-0"></div>
-
             <div className="z-10 animate-fade-in-up">
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap" rel="stylesheet" />
-
                 <h1 className="text-6xl md:text-8xl font-black text-center text-[#FFEB3B] mb-2 font-[Kaushan_Script] tracking-wide" style={{ textShadow: "0 2px 8px #B39DDB" }}>
                     CASHFLOW 4.0
                 </h1>
                 <h2 className="text-center text-[#F3F4F6] mb-8 font-bold tracking-wider">
                     Create Table or Login
                 </h2>
-
                 <div className="flex flex-col md:flex-row gap-8">
+                    {/* Team Login Card */}
+                    
                     {/* Create New Table Card */}
                     <div className="bg-[rgba(35,39,47,0.95)] rounded-2xl shadow-2xl p-8 md:min-w-[340px] flex flex-col items-stretch" style={{boxShadow: "0 8px 40px 0 rgba(0,0,0,0.32)"}}>
                         <h3 className="text-lg font-bold text-[#F3F4F6] mb-5">
