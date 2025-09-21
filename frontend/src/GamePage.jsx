@@ -145,7 +145,7 @@ const GamePage = ({ auth, setAuth }) => {
                     if (lastMode && data.mode !== lastMode) {
                         let label = data.mode === 'bull' ? '🐂 Bull Run (Payday +25%, Loan 7%)'
                             : data.mode === 'bear' ? '🐻 Bear Market (Payday -25%, Loan 18%)'
-                            : 'Normal Market (Payday x1, Loan 10%)';
+                            : 'Normal Market (Payday x1, Loan 13%)';
                         setMarketNotification(`Market mode changed: ${label}`);
                         setTimeout(() => setMarketNotification(''), 3000);
                     }
@@ -372,7 +372,7 @@ const GamePage = ({ auth, setAuth }) => {
 
     const modeDisplay = marketMode === 'bull' ? '🐂 Bull Run (Payday +25%, Loan 7%)'
         : marketMode === 'bear' ? '🐻 Bear Market (Payday -25%, Loan 18%)'
-        : 'Normal Market (Payday x1, Loan 10%)';
+        : 'Normal Market (Payday x1, Loan 13%)';
 
     return (
         <div className="w-full min-h-screen block p-0 bg-black text-gray-300 overflow-x-hidden">
@@ -668,7 +668,7 @@ const GamePage = ({ auth, setAuth }) => {
                                 <span className="font-medium text-xs">Personal Loan:</span>
                                 <span className="text-xs">{formatCurrency(teamState.personalLoan || 0)}</span>
                                 {teamState.personalLoan > 0 ? (
-                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="10% interest added to expenses each payday">+10% interest</span>
+                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="13% interest added to expenses each payday">+13% interest</span>
                                 ) : (
                                     <span className="ml-2 px-2 py-1 rounded-full bg-green-900 text-green-300 font-bold text-xs" title="No interest on personal loan">No interest</span>
                                 )}
@@ -680,7 +680,7 @@ const GamePage = ({ auth, setAuth }) => {
                                 <span className="font-medium">Expenses:</span>
                                 <span className="font-bold text-lg text-red-400">{formatCurrency(totalExpenses)}</span>
                                 {teamState.personalLoan > 0 ? (
-                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="Includes 10% interest on personal loan">+10% personal loan interest</span>
+                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="Includes 13% interest on personal loan">+10% Total loan interest</span>
                                 ) : (
                                     <span className="ml-2 px-2 py-1 rounded-full bg-green-900 text-green-300 font-bold text-xs" title="No interest on personal loan">No interest</span>
                                 )}
@@ -839,9 +839,9 @@ const GamePage = ({ auth, setAuth }) => {
                                 <input type="number" name="amount" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required min="1" onChange={e => setAssetLoanAmount(e.target.value)} />
                                 {loanType === 'borrow' && assetLoanAmount > 0 && (
                                     <div className="mt-2 text-xs text-blue-400">
-                                        <div>10% interest will be added to your borrowed amount.</div>
-                                        <div>Total loan: <span className="font-bold">{formatCurrency(parseFloat(assetLoanAmount) + parseFloat(assetLoanAmount) * 0.10)}</span></div>
-                                        <div>Each payday, <span className="font-bold">10%</span> of your total loan (<span className="font-bold">{formatCurrency((parseFloat(assetLoanAmount) + parseFloat(assetLoanAmount) * 0.10) * 0.10)}</span>) will be added to your expenses until fully repaid.</div>
+                                        <div>13% interest will be added to your borrowed amount.</div>
+                                        <div>Total loan: <span className="font-bold">{formatCurrency(parseFloat(assetLoanAmount) + parseFloat(assetLoanAmount) * 0.13)}</span></div>
+                                        <div>Each payday, <span className="font-bold">13%</span> of your total loan (<span className="font-bold">{formatCurrency((parseFloat(assetLoanAmount) + parseFloat(assetLoanAmount) * 0.10) * 0.10)}</span>) will be added to your expenses until fully repaid.</div>
                                     </div>
                                 )}
                             </div>

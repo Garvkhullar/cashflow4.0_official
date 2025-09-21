@@ -174,7 +174,7 @@ exports.setMarketMode = async (req, res) => {
         team.loanInterestRate = 0.18;
       } else {
         team.paydayMultiplier = 1.0;
-        team.loanInterestRate = 0.10;
+        team.loanInterestRate = 0.13;
       }
       await team.save();
     }
@@ -303,7 +303,7 @@ exports.handlePayday = async (req, res) => {
     // Add EMI/loan charges to base expenses if any active EMIs
     let personalLoanInterest = 0;
     if (teamState.personalLoan && teamState.personalLoan > 0) {
-  personalLoanInterest = teamState.personalLoan * 0.10;
+  personalLoanInterest = teamState.personalLoan * 0.10; // 10% interest on personal loan
     }
     teamState.expenses = baseExpenses + emiExpenseTotal + personalLoanInterest;
   // Calculate net payday (income + passiveIncome - expenses), then apply paydayMultiplier
@@ -313,7 +313,7 @@ exports.handlePayday = async (req, res) => {
   if (personalLoanInterest > 0) {
     addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Personal loan interest of ${personalLoanInterest.toFixed(2)} added to expenses.`);
   }
-  // Apply 10% tax ONLY if nextPaydayTax is true
+  // Apply 40% tax ONLY if nextPaydayTax is true
   let tax = 0;
   if (teamState.nextPaydayTax) {
     tax = Math.round(netPaydayIncome * 0.40);
@@ -422,7 +422,7 @@ exports.handleSmallDeal = async (req, res) => {
     let interestRate = 0;
     if (installments === 3) interestRate = 0.05;
   else if (installments === 6) interestRate = 0.10;
-    else if (installments === 12) interestRate = 0.25;
+    else if (installments === 12) interestRate = 0.15;
     else return res.status(400).json({ message: 'Invalid installment plan.' });
     const interest = loanPrincipal * interestRate;
     const totalLoan = loanPrincipal + interest;
@@ -582,7 +582,7 @@ exports.handleBuyCrypto = async (req, res) => {
 
     const totalCost = price * amount;
     if (loanAmount && loanAmount > 0) {
-  const interestRate = team.loanInterestRate || 0.10;
+  const interestRate = team.loanInterestRate || 0.13;
   const interest = loanAmount * interestRate;
       const totalLoan = loanAmount + interest;
   team.cryptoLoan += totalLoan;
@@ -714,8 +714,8 @@ exports.handleBorrowLoan = async (req, res) => {
       return res.status(400).json({ message: 'Invalid loan amount.' });
     }
 
-    // Add 10% interest to borrowed amount
-  const interest = loanAmount * 0.10;
+    // Add 13% interest to borrowed amount
+  const interest = loanAmount * 0.13;
     const totalLoan = loanAmount + interest;
     team.personalLoan += totalLoan;
     team.cash += loanAmount;
@@ -737,7 +737,7 @@ exports.handleBorrowLoan = async (req, res) => {
     team.expenses = baseExpenses + emiExpenseTotal + personalLoanInterest;
     await team.save();
 
-    addLogEntry(team.tableId, `Team ${team.teamName} borrowed a loan of ${loanAmount}. 10% interest (${interest}) added. Total loan: ${totalLoan}. Expenses updated: ${team.expenses}.`);
+    addLogEntry(team.tableId, `Team ${team.teamName} borrowed a loan of ${loanAmount}. 13% interest (${interest}) added. Total loan: ${totalLoan}. Expenses updated: ${team.expenses}.`);
 
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
@@ -797,7 +797,7 @@ exports.handleRepayLoan = async (req, res) => {
         });
       }
       team.expenses = baseExpenses + emiExpenseTotal;
-      addLogEntry(team.tableId, `Team ${team.teamName} has fully repaid personal loan. 10% interest removed from expenses. Expenses updated: ${team.expenses}.`);
+      addLogEntry(team.tableId, `Team ${team.teamName} has fully repaid personal loan. 13% interest removed from expenses. Expenses updated: ${team.expenses}.`);
     }
     await team.save();
 
