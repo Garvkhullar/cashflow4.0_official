@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+.app-container {
+  width: 100%;
+  /* The background property is removed from here as it's now on the body */
+}
 
 .logo {
   height: 6em;
@@ -14,20 +18,13 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
+/* CORRECTED: The animation block is now properly closed */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
   }
   to {
     transform: rotate(360deg);
-  #root {
-    width: 100vw;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    text-align: center;
-    box-sizing: border-box;
-  }
   }
 }
 

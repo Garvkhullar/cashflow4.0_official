@@ -375,132 +375,134 @@ const GamePage = ({ auth, setAuth }) => {
         : 'Normal Market (Payday x1, Loan 13%)';
 
     return (
-        <div className="w-full min-h-screen block p-0 sm:p-2 md:p-4 lg:p-6 bg-gray-900 text-gray-300 overflow-x-hidden">
+        <div className="w-full min-h-screen block p-0 bg-black text-gray-300 overflow-x-hidden">
             {/* Market mode indicator and notification */}
             <div className="w-full flex flex-col items-center mb-2">
-                <span className={`px-4 py-2 rounded-full font-semibold text-lg mb-1 ${marketMode === 'bull' ? 'bg-green-900 text-green-200' : marketMode === 'bear' ? 'bg-red-900 text-red-200' : 'bg-gray-700 text-gray-200'}`}>{modeDisplay}</span>
+                <span className={`px-4 py-2 rounded-full font-semibold text-lg mb-1 ${marketMode === 'bull' ? 'bg-green-900 text-green-200' : marketMode === 'bear' ? 'bg-red-900 text-red-200' : 'bg-gray-800 text-gray-200'}`}>{modeDisplay}</span>
                 {marketNotification && (
                     <div className="mt-1 px-4 py-2 rounded bg-blue-900 text-blue-200 font-semibold shadow">{marketNotification}</div>
                 )}
             </div>
             <main className="w-full max-w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 lg:gap-6">
-                <div className="bg-gray-800 border border-gray-700 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-6 flex flex-col justify-between min-w-0">
+                {/* Control Panel Card */}
+                <div className="bg-[#1a1a1a] border border-gray-800 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-6 flex flex-col justify-between min-w-0">
                     <div>
-                        <div className="bg-gray-900 p-4 rounded-xl shadow-inner mb-4 flex justify-between items-center">
+                        <div className="bg-[#0f0f0f] p-4 rounded-xl shadow-inner mb-4 flex justify-between items-center">
                             <div>
                                 <p className="font-bold text-gray-300">Username: {auth.username}</p>
                                 <p className="font-bold text-gray-300">Role: {auth.role}</p>
                             </div>
-                            <button onClick={handleLogout} className="py-2 px-4 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-md">Logout</button>
+                            <button onClick={handleLogout} className="py-2 px-4 rounded-xl text-sm font-semibold text-gray-200 bg-gray-900 hover:bg-gray-800 transition-colors">Logout</button>
                         </div>
                         {/* Organized button grid */}
                         <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
-                            <button onClick={() => handleAction('payday')} className="py-3 rounded-xl font-bold text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md col-span-2">Payday</button>
+                            <button onClick={() => { if(window.confirm('Are you sure you want to trigger Payday?')) handleAction('payday'); }} className="py-3 rounded-xl font-bold text-base text-white col-span-2" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Payday</button>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
-                            <button onClick={() => openDealModal('small')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Small Deal</button>
-                            <button onClick={() => openDealModal('big')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Big Deal</button>
-                            <button onClick={() => openAssetModal('stock')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Stock</button>
-                            <button onClick={openSellStockModal} className="py-2 px-2 rounded-xl text-white font-medium bg-yellow-700 hover:bg-yellow-800 transition-colors shadow-md">Sell Stocks</button>
-                            <button onClick={() => openAssetModal('crypto')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Crypto</button>
-                            <button onClick={openSellCryptoModal} className="py-2 px-2 rounded-xl text-white font-medium bg-yellow-700 hover:bg-yellow-800 transition-colors shadow-md">Sell Crypto</button>
-            {/* Sell Crypto Modal */}
-            {isSellCryptoModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
-                        <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Crypto</h3>
-                        {teamState.crypto && teamState.crypto.length > 0 ? (
-                            <form onSubmit={handleSellCrypto}>
+                            <button onClick={() => openDealModal('small')} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Small Deal</button>
+                            <button onClick={() => openDealModal('big')} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Big Deal</button>
+                            <button onClick={() => openAssetModal('stock')} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Stock</button>
+                            <button onClick={openSellStockModal} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Sell Stocks</button>
+                            <button onClick={openSellCryptoModal} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Sell Crypto</button>
+                            <button onClick={() => openAssetModal('crypto')} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Crypto</button>
+                            <button onClick={() => openLoanModal('borrow')} className="py-2 px-2 rounded-xl text-white font-semibold" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Borrow Loan</button>
+                            <button onClick={() => openLoanModal('repay')} className="py-2 px-2 rounded-xl text-white font-semibold" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Repay Loan</button>
+    {/* Sell Crypto Modal */}
+    {isSellCryptoModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Crypto</h3>
+                {teamState.crypto && teamState.crypto.length > 0 ? (
+                    <form onSubmit={handleSellCrypto}>
+                        <div className="mb-4">
+                            <label className="block text-gray-300 text-sm font-bold mb-2">Select Crypto:</label>
+                            <select value={sellCryptoIndex} onChange={e => {
+                                setSellCryptoIndex(e.target.value);
+                                setSellCryptoQuantity('');
+                                setSellCryptoPrice('');
+                            }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required>
+                                <option value="" disabled>-- Select a crypto --</option>
+                                {teamState.crypto.map((crypto, idx) => (
+                                    <option key={idx} value={idx}>{crypto.name} - {crypto.amount} @ {formatCurrency(crypto.purchasePrice)}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {sellCryptoIndex !== '' && teamState.crypto[sellCryptoIndex] && (
+                            <>
                                 <div className="mb-4">
-                                    <label className="block text-gray-300 text-sm font-bold mb-2">Select Crypto:</label>
-                                    <select value={sellCryptoIndex} onChange={e => {
-                                        setSellCryptoIndex(e.target.value);
-                                        setSellCryptoQuantity('');
-                                        setSellCryptoPrice('');
-                                    }} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required>
-                                        <option value="" disabled>-- Select a crypto --</option>
-                                        {teamState.crypto.map((crypto, idx) => (
-                                            <option key={idx} value={idx}>{crypto.name} - {crypto.amount} @ {formatCurrency(crypto.purchasePrice)}</option>
-                                        ))}
-                                    </select>
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.crypto[sellCryptoIndex].amount}):</label>
+                                    <input type="number" min="1" max={teamState.crypto[sellCryptoIndex].amount} value={sellCryptoQuantity} onChange={e => setSellCryptoQuantity(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                 </div>
-                                {sellCryptoIndex !== '' && teamState.crypto[sellCryptoIndex] && (
-                                    <>
-                                        <div className="mb-4">
-                                            <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.crypto[sellCryptoIndex].amount}):</label>
-                                            <input type="number" min="1" max={teamState.crypto[sellCryptoIndex].amount} value={sellCryptoQuantity} onChange={e => setSellCryptoQuantity(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
-                                        </div>
-                                        <div className="mb-4">
-                                            <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Crypto:</label>
-                                            <input type="number" min="0" value={sellCryptoPrice} onChange={e => setSellCryptoPrice(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
-                                        </div>
-                                    </>
-                                )}
-                                <div className="flex justify-end space-x-2">
-                                    <button type="button" onClick={() => setIsSellCryptoModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" disabled={sellCryptoIndex === '' || !sellCryptoQuantity || !sellCryptoPrice || (sellCryptoIndex !== '' && (parseInt(sellCryptoQuantity) > teamState.crypto[sellCryptoIndex].amount || parseInt(sellCryptoQuantity) <= 0))} className="font-semibold py-2 px-4 rounded-md text-white bg-yellow-700 hover:bg-yellow-800">
-                                        Sell
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="text-gray-300">No crypto to sell.</div>
-                        )}
-                    </div>
-                </div>
-            )}
-            {/* Sell Stocks Modal */}
-            {isSellStockModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
-                        <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Stocks</h3>
-                        {teamState.stocks && teamState.stocks.length > 0 ? (
-                            <form onSubmit={handleSellStock}>
                                 <div className="mb-4">
-                                    <label className="block text-gray-300 text-sm font-bold mb-2">Select Stock:</label>
-                                    <select value={sellStockIndex} onChange={e => {
-                                        setSellStockIndex(e.target.value);
-                                        setSellQuantity('');
-                                        setSellPrice('');
-                                    }} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required>
-                                        <option value="" disabled>-- Select a stock --</option>
-                                        {teamState.stocks.map((stock, idx) => (
-                                            <option key={idx} value={idx}>{stock.name} - {stock.amount} @ {formatCurrency(stock.purchasePrice)}</option>
-                                        ))}
-                                    </select>
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Crypto:</label>
+                                    <input type="number" min="0" value={sellCryptoPrice} onChange={e => setSellCryptoPrice(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                 </div>
-                                {sellStockIndex !== '' && teamState.stocks[sellStockIndex] && (
-                                    <>
-                                        <div className="mb-4">
-                                            <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.stocks[sellStockIndex].amount}):</label>
-                                            <input type="number" min="1" max={teamState.stocks[sellStockIndex].amount} value={sellQuantity} onChange={e => setSellQuantity(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
-                                        </div>
-                                        <div className="mb-4">
-                                            <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Stock:</label>
-                                            <input type="number" min="0" value={sellPrice} onChange={e => setSellPrice(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
-                                        </div>
-                                    </>
-                                )}
-                                <div className="flex justify-end space-x-2">
-                                    <button type="button" onClick={() => setIsSellStockModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" disabled={sellStockIndex === '' || !sellQuantity || !sellPrice || (sellStockIndex !== '' && (parseInt(sellQuantity) > teamState.stocks[sellStockIndex].amount || parseInt(sellQuantity) <= 0))} className="font-semibold py-2 px-4 rounded-md text-white bg-yellow-700 hover:bg-yellow-800">
-                                        Sell
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="text-gray-300">No stocks to sell.</div>
+                            </>
                         )}
-                    </div>
-                </div>
-            )}
-                            <button onClick={() => openAssetModal('crypto')} className="py-2 px-2 rounded-xl text-white font-medium bg-gray-600 hover:bg-gray-700 transition-colors shadow-md">Crypto</button>
-                            <button onClick={() => handlePenaltyClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-red-600 hover:bg-red-700 transition-colors shadow-md">Penalty</button>
-                            <button onClick={() => handleChanceClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">Chance</button>
+                        <div className="flex justify-end space-x-2">
+                            <button type="button" onClick={() => setIsSellCryptoModalOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">
+                                Cancel
+                            </button>
+                            <button type="submit" disabled={sellCryptoIndex === '' || !sellCryptoQuantity || !sellCryptoPrice || (sellCryptoIndex !== '' && (parseInt(sellCryptoQuantity) > teamState.crypto[sellCryptoIndex].amount || parseInt(sellCryptoQuantity) <= 0))} className="font-semibold py-2 px-4 rounded-md text-white bg-yellow-700 hover:bg-yellow-800">
+                                Sell
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <div className="text-gray-300">No crypto to sell.</div>
+                )}
+            </div>
+        </div>
+    )}
+    {/* Sell Stocks Modal */}
+    {isSellStockModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Stocks</h3>
+                {teamState.stocks && teamState.stocks.length > 0 ? (
+                    <form onSubmit={handleSellStock}>
+                        <div className="mb-4">
+                            <label className="block text-gray-300 text-sm font-bold mb-2">Select Stock:</label>
+                            <select value={sellStockIndex} onChange={e => {
+                                setSellStockIndex(e.target.value);
+                                setSellQuantity('');
+                                setSellPrice('');
+                            }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required>
+                                <option value="" disabled>-- Select a stock --</option>
+                                {teamState.stocks.map((stock, idx) => (
+                                    <option key={idx} value={idx}>{stock.name} - {stock.amount} @ {formatCurrency(stock.purchasePrice)}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {sellStockIndex !== '' && teamState.stocks[sellStockIndex] && (
+                            <>
+                                <div className="mb-4">
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.stocks[sellStockIndex].amount}):</label>
+                                    <input type="number" min="1" max={teamState.stocks[sellStockIndex].amount} value={sellQuantity} onChange={e => setSellQuantity(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Stock:</label>
+                                    <input type="number" min="0" value={sellPrice} onChange={e => setSellPrice(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                </div>
+                            </>
+                        )}
+                        <div className="flex justify-end space-x-2">
+                            <button type="button" onClick={() => setIsSellStockModalOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">
+                                Cancel
+                            </button>
+                            <button type="submit" disabled={sellStockIndex === '' || !sellQuantity || !sellPrice || (sellStockIndex !== '' && (parseInt(sellQuantity) > teamState.stocks[sellStockIndex].amount || parseInt(sellQuantity) <= 0))} className="font-semibold py-2 px-4 rounded-md text-white bg-yellow-700 hover:bg-yellow-800">
+                                Sell
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <div className="text-gray-300">No stocks to sell.</div>
+                )}
+            </div>
+        </div>
+    )}
+                            <button onClick={() => handlePenaltyClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Penalty</button>
+                            <button onClick={() => handleChanceClick(teams[currentTeamIndex])} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Chance</button>
                             <button
                                 onClick={() => {
                                     if (teamState.futureCounter > 0) {
@@ -511,7 +513,7 @@ const GamePage = ({ auth, setAuth }) => {
                                         handleAction('future/toggle');
                                     }
                                 }}
-                                className={`py-2 px-2 rounded-xl text-white font-medium transition-colors shadow-md ${teamState.futureCounter > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+                                className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}
                             >
                                 Future {teamState.futureCounter > 0 ? `(${teamState.futureCounter})` : ''}
                             </button>
@@ -525,42 +527,39 @@ const GamePage = ({ auth, setAuth }) => {
                                         handleAction('options/toggle');
                                     }
                                 }}
-                                className={`py-2 px-2 rounded-xl text-white font-medium transition-colors shadow-md ${teamState.optionsCounter > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+                                className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}
                             >
                                 Options {teamState.optionsCounter > 0 ? `(${teamState.optionsCounter})` : ''}
                             </button>
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:gap-3 mb-4">
-                            <button onClick={openCashModal} className="py-2 px-2 rounded-xl text-white font-medium bg-purple-600 hover:bg-purple-700 transition-colors shadow-md">Deduct/Add Cash</button>
+                            <button onClick={openCashModal} className="py-2 px-2 rounded-xl text-white font-medium shadow-md" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>Deduct/Add Cash</button>
                         </div>
                         <div className="flex flex-wrap justify-center items-center gap-2 mt-2">
                             <button
                                 onClick={() => setCurrentTeamIndex(i => Math.max(0, i - 1))}
                                 disabled={currentTeamIndex === 0}
-                                className="px-4 py-2 bg-gray-600 text-gray-200 rounded hover:bg-gray-500 disabled:opacity-50"
+                                style={{background:'#353744', color:'#fff'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'} className="px-4 py-2 rounded disabled:opacity-50"
                             >Prev</button>
                             <span className="font-bold text-lg text-white">{teams[currentTeamIndex]?.teamName || "No Team"}</span>
                             <button
                                 onClick={() => setCurrentTeamIndex(i => Math.min(teams.length - 1, i + 1))}
                                 disabled={currentTeamIndex === teams.length - 1}
-                                className="px-4 py-2 bg-gray-600 text-gray-200 rounded hover:bg-gray-500 disabled:opacity-50"
+                                style={{background:'#353744', color:'#fff'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'} className="px-4 py-2 rounded disabled:opacity-50"
                             >Next</button>
                         </div>
                     </div>
                     <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => openLoanModal('borrow')} className="w-full py-3 rounded-xl text-white font-semibold bg-green-600 hover:bg-green-700 transition-colors shadow-md">Borrow Loan</button>
-                            <button onClick={() => openLoanModal('repay')} className="w-full py-3 rounded-xl text-white font-semibold bg-red-600 hover:bg-red-700 transition-colors shadow-md">Repay Loan</button>
-                        </div>
                         <div className="grid grid-cols-3 gap-4">
-                            <button onClick={() => handleAction('freeze')} className="w-full py-3 rounded-xl text-white font-semibold bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-md text-base flex items-center justify-center gap-2">
+                            <button onClick={() => { if(window.confirm('Are you sure you want to activate Asset Freeze?')) handleAction('freeze'); }} className="w-full py-3 rounded-xl text-white font-semibold text-base flex items-center justify-center gap-2" style={{background:'#353744'}} onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} onMouseOut={e=>e.currentTarget.style.background='#353744'}>
                                 <span role="img" aria-label="lock" className="text-lg">🔒</span>
                                 Asset Freeze
                             </button>
                         </div>
                     </div>
                 </div>
-                <div className="bg-gray-800 border border-gray-700 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-6 min-w-0">
+                {/* Team Details Card */}
+                <div className="bg-[#18181b] border border-gray-900 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-6 min-w-0">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {teams.map((team, index) => (
                             <div key={team._id} className="w-full mb-4 p-4 rounded-xl shadow bg-gray-700 flex flex-col items-center border border-gray-600">
@@ -587,8 +586,11 @@ const GamePage = ({ auth, setAuth }) => {
                                 </label>
                                 <div className="w-full flex flex-col gap-2 mt-2">
                                     <button
-                                        onClick={async () => { await handleAction('tax/next', {}); }}
-                                        className="w-full px-4 py-2 rounded-lg text-xs font-bold bg-orange-500 text-white shadow"
+                                        onClick={async () => { if(window.confirm('Are you sure you want to apply 13% Tax on next payday?')) await handleAction('tax/next', {}); }}
+                                        className="w-full px-4 py-2 rounded-lg text-xs font-bold shadow"
+                                        style={{background:'#353744', color:'#fff'}} 
+                                        onMouseOver={e=>e.currentTarget.style.background='#a78bfa'} 
+                                        onMouseOut={e=>e.currentTarget.style.background='#353744'}
                                         title="Apply 13% tax on next payday"
                                     >TAX</button>
                                 </div>
@@ -598,7 +600,7 @@ const GamePage = ({ auth, setAuth }) => {
                             </div>
                         ))}
                     </div>
-                    <div className="bg-gray-900 p-4 rounded-xl shadow-inner">
+                    <div className="bg-gray-2200 p-4 rounded-xl shadow-inner">
                         <h2 className="text-xl font-bold text-center text-gray-200 mb-4">Team {teamState.teamName} Details</h2>
                         {teamState.isVacationOn && (
                             <div className="flex justify-center items-center mb-2">
@@ -686,9 +688,10 @@ const GamePage = ({ auth, setAuth }) => {
                         </div>
                     </div>
                 </div>
-                <div className="bg-gray-800 border border-gray-700 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-4 flex flex-col min-w-0">
+                {/* Table Logs Card */}
+                <div className="bg-[#1a1a1a] border border-gray-800 p-3 sm:p-4 md:p-6 rounded-2xl shadow-lg space-y-4 flex flex-col min-w-0">
                     <h2 className="text-2xl font-bold text-white">Table Logs</h2>
-                    <div className="flex-grow bg-gray-900 p-2 sm:p-4 rounded-xl shadow-inner text-sm text-gray-300 overflow-y-auto h-full min-h-[200px] sm:min-h-[350px] md:min-h-[500px] max-h-[40vh] sm:max-h-[60vh] md:max-h-[80vh]">
+                    <div className="flex-grow bg-[#0f0f0f] p-2 sm:p-4 rounded-xl shadow-inner text-sm text-gray-300 overflow-y-auto h-full min-h-[200px] sm:min-h-[350px] md:min-h-[500px] max-h-[40vh] sm:max-h-[60vh] md:max-h-[80vh]">
                         {logs.length > 0 ? logs.map((log, index) => (
                             <p key={index} className="mb-2 break-words whitespace-pre-line">{log}</p>
                         )) : (
@@ -700,7 +703,7 @@ const GamePage = ({ auth, setAuth }) => {
             
             {isDealModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                    <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">{dealType === 'small' ? 'Small Deal' : 'Big Deal'}</h3>
                         <div className="mb-4">
                             <label className="block text-gray-300 text-sm font-bold mb-2">Select a Deal:</label>
@@ -711,7 +714,7 @@ const GamePage = ({ auth, setAuth }) => {
                                     setBuyAmount('');
                                     setEmiPreview(null);
                                 }} 
-                                className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md"
+                                className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md"
                                 value={selectedDeal?._id || ''}
                             >
                                 <option value="" disabled>-- Select a deal --</option>
@@ -721,7 +724,7 @@ const GamePage = ({ auth, setAuth }) => {
                             </select>
                         </div>
                         {selectedDeal && (
-                            <div className="bg-gray-700 p-4 rounded-lg mb-4 text-gray-200">
+                            <div className="bg-gray-800 p-4 rounded-lg mb-4 text-gray-200">
                                 <p><strong>Name:</strong> {selectedDeal.name}</p>
                                 <p><strong>Cost:</strong> {formatCurrency(selectedDeal.cost)}</p>
                                 <p><strong>Passive Income:</strong> {formatCurrency(selectedDeal.passiveIncome)}</p>
@@ -730,14 +733,14 @@ const GamePage = ({ auth, setAuth }) => {
                                     <input type="number" min="1" max={selectedDeal.cost} value={buyAmount} onChange={e => {
                                         setBuyAmount(e.target.value);
                                         setEmiPreview(null);
-                                    }} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" />
+                                    }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" />
                                 </div>
                                 <div className="mt-4">
                                     <label className="block text-gray-300 text-sm font-bold mb-2">Installment Plan:</label>
                                     <select value={installments} onChange={e => {
                                         setInstallments(e.target.value);
                                         setEmiPreview(null);
-                                    }} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md">
+                                    }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
                                         <option value={3}>3 Paydays (5% interest)</option>
                                         <option value={6}>6 Paydays (13% interest)</option>
                                         <option value={12}>12 Paydays (20% interest)</option>
@@ -764,7 +767,7 @@ const GamePage = ({ auth, setAuth }) => {
                             </div>
                         )}
                         <div className="flex justify-end space-x-2 mt-4">
-                            <button onClick={() => setIsDealModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
+                            <button onClick={() => setIsDealModalOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">
                                 Cancel
                             </button>
                             <button 
@@ -781,7 +784,7 @@ const GamePage = ({ auth, setAuth }) => {
 
             {isAssetModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                    <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Buy {assetType === 'stock' ? 'Stock' : 'Crypto'}</h3>
                         <form onSubmit={(e) => {
                             e.preventDefault();
@@ -793,25 +796,25 @@ const GamePage = ({ auth, setAuth }) => {
                         }}>
                             <div className="mb-4">
                                 <label className="block text-gray-300 text-sm font-bold mb-2">Name:</label>
-                                <input type="text" name="name" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" placeholder={assetType === 'stock' ? 'e.g., AAPL' : 'e.g., BTC'} required />
+                                <input type="text" name="name" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" placeholder={assetType === 'stock' ? 'e.g., AAPL' : 'e.g., BTC'} required />
                             </div>
                             <div className="mb-4">
                                 <label className="block text-gray-300 text-sm font-bold mb-2">Amount:</label>
-                                <input type="number" name="amount" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required min="1" />
+                                <input type="number" name="amount" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required min="1" />
                             </div>
                             <div className="mb-4">
                                 <label className="block text-gray-300 text-sm font-bold mb-2">Price:</label>
-                                <input type="number" name="price" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required min="0" />
+                                <input type="number" name="price" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required min="0" />
                             </div>
                             <div className="mb-4">
                                 <label className="block text-gray-300 text-sm font-bold mb-2">Loan Amount (optional):</label>
-                                <input type="number" min="0" value={assetLoanAmount} onChange={e => setAssetLoanAmount(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" />
+                                <input type="number" min="0" value={assetLoanAmount} onChange={e => setAssetLoanAmount(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" />
                                 {assetLoanAmount > 0 && (
                                     <p className="text-xs text-blue-400 mt-2">A flat 13% interest will be added. You can repay the loan anytime.</p>
                                 )}
                             </div>
                             <div className="flex justify-end space-x-2">
-                                <button type="button" onClick={() => setIsAssetModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
+                                <button type="button" onClick={() => setIsAssetModalOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">
                                     Cancel
                                 </button>
                                 <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-blue-600 hover:bg-blue-700">
@@ -825,7 +828,7 @@ const GamePage = ({ auth, setAuth }) => {
 
             {isLoanModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                    <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">{loanType === 'borrow' ? 'Borrow Loan' : 'Repay Loan'}</h3>
                         <form onSubmit={(e) => {
                             e.preventDefault();
@@ -835,7 +838,7 @@ const GamePage = ({ auth, setAuth }) => {
                         }}>
                             <div className="mb-4">
                                 <label className="block text-gray-300 text-sm font-bold mb-2">Amount:</label>
-                                <input type="number" name="amount" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required min="1" onChange={e => setAssetLoanAmount(e.target.value)} />
+                                <input type="number" name="amount" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required min="1" onChange={e => setAssetLoanAmount(e.target.value)} />
                                 {loanType === 'borrow' && assetLoanAmount > 0 && (
                                     <div className="mt-2 text-xs text-blue-400">
                                         <div>13% interest will be added to your borrowed amount.</div>
@@ -847,7 +850,7 @@ const GamePage = ({ auth, setAuth }) => {
                             {loanType === 'repay' && (
                                 <div className="mb-4">
                                     <label className="block text-gray-300 text-sm font-bold mb-2">Repay Loan Type:</label>
-                                    <select name="repayType" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required>
+                                    <select name="repayType" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required>
                                         <option value="stocksLoan">Stock Loan</option>
                                         <option value="cryptoLoan">Crypto Loan</option>
                                         <option value="personalLoan">Personal Loan</option>
@@ -856,7 +859,7 @@ const GamePage = ({ auth, setAuth }) => {
                                 </div>
                             )}
                             <div className="flex justify-end space-x-2">
-                                <button type="button" onClick={() => setIsLoanModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
+                                <button type="button" onClick={() => setIsLoanModalOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">
                                     Cancel
                                 </button>
                                 <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-blue-600 hover:bg-blue-700">
@@ -867,105 +870,105 @@ const GamePage = ({ auth, setAuth }) => {
                     </div>
                 </div>
             )}
-        {/* Deduct/Add Cash Modal */}
-        {isCashModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
-                    <h3 className="text-2xl font-bold text-center mb-4 text-white">Deduct/Add Cash</h3>
-                    <form onSubmit={handleCashUpdate}>
-                        <div className="mb-4">
-                            <label className="block text-gray-300 text-sm font-bold mb-2">Operation:</label>
-                            <select value={cashOperation} onChange={e => setCashOperation(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md">
-                                <option value="add">Add</option>
-                                <option value="deduct">Deduct</option>
-                            </select>
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-gray-300 text-sm font-bold mb-2">Type:</label>
-                            <select value={cashType} onChange={e => setCashType(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md">
-                                <option value="number">Number</option>
-                                <option value="percent">Percent</option>
-                            </select>
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-gray-300 text-sm font-bold mb-2">Value:</label>
-                            <input type="number" min="1" value={cashValue} onChange={e => setCashValue(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" required />
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                            <button type="button" onClick={() => setIsCashModalOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">
-                                Cancel
-                            </button>
-                            <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-purple-600 hover:bg-purple-700">
-                                Submit
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        )}
-
-        {/* Penalty Selection Dialog */}
-        {isPenaltyDialogOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
-                    <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Penalty</h3>
+    {/* Deduct/Add Cash Modal */}
+    {isCashModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                <h3 className="text-2xl font-bold text-center mb-4 text-white">Deduct/Add Cash</h3>
+                <form onSubmit={handleCashUpdate}>
                     <div className="mb-4">
-                        <label className="block text-gray-300 text-sm font-bold mb-2">Penalty:</label>
-                        <select value={selectedPenaltyId} onChange={e => {
-                            setSelectedPenaltyId(e.target.value);
-                            setCustomPenaltyAmount('');
-                        }} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md">
-                            <option value="" disabled>-- Select a penalty --</option>
-                            {penalties.map(penalty => (
-                                <option key={penalty._id} value={penalty._id}>{penalty.name} (₹{penalty.amount})</option>
-                            ))}
+                        <label className="block text-gray-300 text-sm font-bold mb-2">Operation:</label>
+                        <select value={cashOperation} onChange={e => setCashOperation(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
+                            <option value="add">Add</option>
+                            <option value="deduct">Deduct</option>
                         </select>
                     </div>
-                    {selectedPenaltyId && (
-                        <div className="bg-gray-700 p-4 rounded-lg mb-4 text-gray-200">
-                            <p><strong>Description:</strong> {penalties.find(p => p._id === selectedPenaltyId)?.description}</p>
-                            <p><strong>Default Amount:</strong> ₹{penalties.find(p => p._id === selectedPenaltyId)?.amount}</p>
-                            <div className="mt-2">
-                                <label className="block text-gray-300 text-sm font-bold mb-2">Enter Penalty Amount:</label>
-                                <input type="number" min="1" className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md" value={customPenaltyAmount || penalties.find(p => p._id === selectedPenaltyId)?.amount || ''} onChange={e => setCustomPenaltyAmount(e.target.value)} />
-                            </div>
-                        </div>
-                    )}
-                    <div className="flex justify-end space-x-2 mt-4">
-                        <button onClick={() => setIsPenaltyDialogOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">Cancel</button>
-                        <button onClick={handleApplyPenalty} disabled={!selectedPenaltyId} className={`font-semibold py-2 px-4 rounded-md text-white transition-colors ${!selectedPenaltyId ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>Apply</button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {/* Chance Selection Dialog */}
-        {isChanceDialogOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                <div className="bg-gray-800 border border-gray-600 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
-                    <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Chance</h3>
                     <div className="mb-4">
-                        <label className="block text-gray-300 text-sm font-bold mb-2">Chance:</label>
-                        <select value={selectedChanceId} onChange={e => setSelectedChanceId(e.target.value)} className="w-full p-2 border border-gray-600 bg-gray-700 text-gray-200 rounded-md">
-                            <option value="" disabled>-- Select a chance --</option>
-                            {chances.map(chance => (
-                                <option key={chance._id} value={chance._id}>{chance.name} (₹{chance.amount})</option>
-                            ))}
+                        <label className="block text-gray-300 text-sm font-bold mb-2">Type:</label>
+                        <select value={cashType} onChange={e => setCashType(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
+                            <option value="number">Number</option>
+                            <option value="percent">Percent</option>
                         </select>
                     </div>
-                    {selectedChanceId && (
-                        <div className="bg-gray-700 p-4 rounded-lg mb-4 text-gray-200">
-                            <p><strong>Description:</strong> {chances.find(c => c._id === selectedChanceId)?.description}</p>
-                            <p><strong>Amount:</strong> ₹{chances.find(c => c._id === selectedChanceId)?.amount}</p>
-                        </div>
-                    )}
-                    <div className="flex justify-end space-x-2 mt-4">
-                        <button onClick={() => setIsChanceDialogOpen(false)} className="bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-500">Cancel</button>
-                        <button onClick={handleApplyChance} disabled={!selectedChanceId} className={`font-semibold py-2 px-4 rounded-md text-white transition-colors ${!selectedChanceId ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>Apply</button>
+                    <div className="mb-4">
+                        <label className="block text-gray-300 text-sm font-bold mb-2">Value:</label>
+                        <input type="number" min="1" value={cashValue} onChange={e => setCashValue(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                     </div>
+                    <div className="flex justify-end space-x-2">
+                        <button type="button" onClick={() => setIsCashModalOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">
+                            Cancel
+                        </button>
+                        <button type="submit" className="font-semibold py-2 px-4 rounded-md text-white bg-purple-600 hover:bg-purple-700">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )}
+
+    {/* Penalty Selection Dialog */}
+    {isPenaltyDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Penalty</h3>
+                <div className="mb-4">
+                    <label className="block text-gray-300 text-sm font-bold mb-2">Penalty:</label>
+                    <select value={selectedPenaltyId} onChange={e => {
+                        setSelectedPenaltyId(e.target.value);
+                        setCustomPenaltyAmount('');
+                    }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
+                        <option value="" disabled>-- Select a penalty --</option>
+                        {penalties.map(penalty => (
+                            <option key={penalty._id} value={penalty._id}>{penalty.name} (₹{penalty.amount})</option>
+                        ))}
+                    </select>
+                </div>
+                {selectedPenaltyId && (
+                    <div className="bg-gray-800 p-4 rounded-lg mb-4 text-gray-200">
+                        <p><strong>Description:</strong> {penalties.find(p => p._id === selectedPenaltyId)?.description}</p>
+                        <p><strong>Default Amount:</strong> ₹{penalties.find(p => p._id === selectedPenaltyId)?.amount}</p>
+                        <div className="mt-2">
+                            <label className="block text-gray-300 text-sm font-bold mb-2">Enter Penalty Amount:</label>
+                            <input type="number" min="1" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" value={customPenaltyAmount || penalties.find(p => p._id === selectedPenaltyId)?.amount || ''} onChange={e => setCustomPenaltyAmount(e.target.value)} />
+                        </div>
+                    </div>
+                )}
+                <div className="flex justify-end space-x-2 mt-4">
+                    <button onClick={() => setIsPenaltyDialogOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">Cancel</button>
+                    <button onClick={handleApplyPenalty} disabled={!selectedPenaltyId} className={`font-semibold py-2 px-4 rounded-md text-white transition-colors ${!selectedPenaltyId ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>Apply</button>
                 </div>
             </div>
-        )}
+        </div>
+    )}
+
+    {/* Chance Selection Dialog */}
+    {isChanceDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
+                <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Chance</h3>
+                <div className="mb-4">
+                    <label className="block text-gray-300 text-sm font-bold mb-2">Chance:</label>
+                    <select value={selectedChanceId} onChange={e => setSelectedChanceId(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
+                        <option value="" disabled>-- Select a chance --</option>
+                        {chances.map(chance => (
+                            <option key={chance._id} value={chance._id}>{chance.name} (₹{chance.amount})</option>
+                        ))}
+                    </select>
+                </div>
+                {selectedChanceId && (
+                    <div className="bg-gray-800 p-4 rounded-lg mb-4 text-gray-200">
+                        <p><strong>Description:</strong> {chances.find(c => c._id === selectedChanceId)?.description}</p>
+                        <p><strong>Amount:</strong> ₹{chances.find(c => c._id === selectedChanceId)?.amount}</p>
+                    </div>
+                )}
+                <div className="flex justify-end space-x-2 mt-4">
+                    <button onClick={() => setIsChanceDialogOpen(false)} className="bg-gray-700 text-gray-200 font-semibold py-2 px-4 rounded-md hover:bg-gray-600">Cancel</button>
+                    <button onClick={handleApplyChance} disabled={!selectedChanceId} className={`font-semibold py-2 px-4 rounded-md text-white transition-colors ${!selectedChanceId ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>Apply</button>
+                </div>
+            </div>
+        </div>
+    )}
         </div>
     );
 };
