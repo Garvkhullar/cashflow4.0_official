@@ -10,8 +10,6 @@ const teamSchema = new mongoose.Schema({
   income: { type: Number, default: 450000 },
   passiveIncome: { type: Number, default: 0 },
   assets: { type: Number, default: 0 },
-  stocksLoan: { type: Number, default: 0 },
-  cryptoLoan: { type: Number, default: 0 },
   expenses: { type: Number, default: 300000 },
   smallDealLoan: { type: Number, default: 0 },
   bigDealLoan: { type: Number, default: 0 },
@@ -49,7 +47,7 @@ const teamSchema = new mongoose.Schema({
 
   // Market mode multipliers
   paydayMultiplier: { type: Number, default: 1.0 },
-  loanInterestRate: { type: Number, default: 0.13 },
+  loanInterestRate: { type: Number, default: 0.10 },
 
   // Vacation status and exemption
   isVacationOn: { type: Boolean, default: false },
@@ -80,6 +78,9 @@ const teamSchema = new mongoose.Schema({
   ],
   futureCounter: { type: Number, default: 0 },
   optionsCounter: { type: Number, default: 0 },
+
+  // Payday counter for each team
+  paydayCounter: { type: Number, default: 0 },
 });
 
 const Team = mongoose.model('Team', teamSchema);

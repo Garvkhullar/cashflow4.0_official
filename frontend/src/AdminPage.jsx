@@ -51,7 +51,7 @@ const AdminPage = ({ auth }) => {
 
     const modeDisplay = marketMode === 'bull' ? '🐂 Bull Run (Payday +25%, Loan 7%)'
         : marketMode === 'bear' ? '🐻 Bear Market (Payday -25%, Loan 18%)'
-        : 'Normal Market (Payday x1, Loan 13%)';
+        : 'Normal Market (Payday x1, Loan 10%)';
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-blue-50 to-purple-100 p-2 sm:p-4">
