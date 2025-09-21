@@ -7,7 +7,7 @@ const teamSchema = new mongoose.Schema({
   teamName: { type: String, required: true },
   code: { type: String, required: true }, // 4-digit login code
   cash: { type: Number, default: 500000 },
-  income: { type: Number, default: 450000 },
+  income: { type: Number, default: 500000 },
   passiveIncome: { type: Number, default: 0 },
   assets: { type: Number, default: 0 },
   expenses: { type: Number, default: 300000 },
