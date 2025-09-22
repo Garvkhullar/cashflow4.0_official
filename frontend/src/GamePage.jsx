@@ -747,13 +747,13 @@ const GamePage = ({ auth, setAuth }) => {
                                     }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
                                         <option value={3}>3 Paydays (5% interest)</option>
                                         <option value={6}>6 Paydays (10% interest)</option>
-                                        <option value={12}>12 Paydays (15% interest)</option>
+                                        <option value={12}>12 Paydays (20% interest)</option>
                                     </select>
                                 </div>
                                 <div className="mt-4">
                                     <button type="button" className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md font-semibold disabled:bg-indigo-400 disabled:cursor-not-allowed" disabled={!buyAmount || buyAmount > selectedDeal.cost || buyAmount <= 0} onClick={() => {
                                         const principal = selectedDeal.cost - parseFloat(buyAmount);
-                                        let rate = installments == 3 ? 0.05 : installments == 6 ? 0.10 : 0.15;
+                                        let rate = installments == 3 ? 0.05 : installments == 6 ? 0.10 : 0.20;
                                         const interest = principal * rate;
                                         const totalLoan = principal + interest;
                                         const emi = totalLoan / installments;

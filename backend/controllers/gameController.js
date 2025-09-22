@@ -422,7 +422,7 @@ exports.handleSmallDeal = async (req, res) => {
     let interestRate = 0;
     if (installments === 3) interestRate = 0.05;
   else if (installments === 6) interestRate = 0.10;
-    else if (installments === 12) interestRate = 0.15;
+    else if (installments === 12) interestRate = 0.2;
     else return res.status(400).json({ message: 'Invalid installment plan.' });
     const interest = loanPrincipal * interestRate;
     const totalLoan = loanPrincipal + interest;
@@ -488,7 +488,7 @@ exports.handleBigDeal = async (req, res) => {
     let interestRate = 0;
     if (installments === 3) interestRate = 0.05;
   else if (installments === 6) interestRate = 0.10;
-    else if (installments === 12) interestRate = 0.15;
+    else if (installments === 12) interestRate = 0.2;
     else return res.status(400).json({ message: 'Invalid installment plan.' });
     const interest = loanPrincipal * interestRate;
     const totalLoan = loanPrincipal + interest;

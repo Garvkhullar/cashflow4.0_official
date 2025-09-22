@@ -3,6 +3,7 @@ backend/seed_deals.js
 backend/seed_delete_tablelogs.js
 backend/seed_penalties.js
 backend/seed_chances.js
+backend/seed_delete_all.js
 # Ignore .env files for all seeders
 # Ignore environment files
 .env
