@@ -251,7 +251,7 @@ exports.handlePayday = async (req, res) => {
   }
 
   // Always reset expenses to base value before adding EMI/loan charges
-  let baseExpenses = 200000;
+  let baseExpenses = 300000;
   teamState.expenses = baseExpenses;
 
   // Vacation tax exemption logic
