@@ -653,7 +653,10 @@ const GamePage = ({ auth, setAuth }) => {
                                 </label>
                                 <div className="w-full flex flex-col gap-2 mt-2">
                                     <button
-                                        onClick={async () => { if (window.confirm('Are you sure you want to apply 40% Tax on next payday?')) await handleAction('tax/next', {}); }}
+                                        onClick={async () => {
+                                            try { window.alert('you ae going to give tax to that respective team'); } catch (e) {}
+                                            if (window.confirm('Are you sure you want to apply 40% Tax on next payday?')) await handleAction('tax/next', {});
+                                        }}
                                         className="w-full px-4 py-2 rounded-lg text-xs font-bold shadow"
                                         style={{ background: '#353744', color: '#fff' }}
                                         onMouseOver={e => e.currentTarget.style.background = '#a78bfa'}
