@@ -499,7 +499,7 @@ const GamePage = ({ auth, setAuth }) => {
                                                         </div>
                                                         <div className="mb-4">
                                                             <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Crypto:</label>
-                                                            <input type="text" inputMode="numeric" pattern="[0-9,]*" min="0" value={formatIndian(sellCryptoPrice)} onChange={e => setSellCryptoPrice(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                                            <input type="text" inputMode="decimal" pattern="[0-9.,]*" min="0" value={formatIndian(sellCryptoPrice)} onChange={e => setSellCryptoPrice(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                                         </div>
                                                     </>
                                                 )}
@@ -547,7 +547,7 @@ const GamePage = ({ auth, setAuth }) => {
                                                         </div>
                                                         <div className="mb-4">
                                                             <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Stock:</label>
-                                                            <input type="text" inputMode="numeric" pattern="[0-9,]*" min="0" value={formatIndian(sellPrice)} onChange={e => setSellPrice(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                                            <input type="text" inputMode="decimal" pattern="[0-9.,]*" min="0" value={formatIndian(sellPrice)} onChange={e => setSellPrice(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                                         </div>
                                                     </>
                                                 )}
@@ -927,7 +927,7 @@ const GamePage = ({ auth, setAuth }) => {
                             </div>
                             <div className="mb-4">
                                 <label className="block text-gray-300 text-sm font-bold mb-2">Price:</label>
-                                <input type="text" name="price" inputMode="numeric" pattern="[0-9,]*" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required min="0" onWheel={e => e.currentTarget.blur()} />
+                                <input type="text" name="price" inputMode="decimal" pattern="[0-9.,]*" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required min="0" onWheel={e => e.currentTarget.blur()} />
                             </div>
 
                             <div className="flex justify-end space-x-2">
@@ -1044,10 +1044,10 @@ const GamePage = ({ auth, setAuth }) => {
                             <div className="bg-gray-800 p-4 rounded-lg mb-4 text-gray-200">
                                 <p><strong>Description:</strong> {penalties.find(p => p._id === selectedPenaltyId)?.description}</p>
                                 <p><strong>Default Amount:</strong> ₹{penalties.find(p => p._id === selectedPenaltyId)?.amount}</p>
-                                <div className="mt-2">
+                                {/* <div className="mt-2">
                                     <label className="block text-gray-300 text-sm font-bold mb-2">Enter Penalty Amount:</label>
                                     <input type="text" inputMode="numeric" pattern="[0-9,]*" min="1" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" value={formatIndian(customPenaltyAmount || penalties.find(p => p._id === selectedPenaltyId)?.amount || '')} onChange={e => setCustomPenaltyAmount(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} />
-                                </div>
+                                </div> */}
                             </div>
                         )}
                         <div className="flex justify-end space-x-2 mt-4">

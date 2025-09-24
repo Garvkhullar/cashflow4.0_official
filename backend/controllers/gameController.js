@@ -834,8 +834,8 @@ exports.toggleFuture = async (req, res) => {
       team.futureCounter = 0; // Turn off
       await addLogEntry(team.tableId, `Team ${team.teamName} turned off Future.`);
     } else {
-      team.futureCounter = 8; // Turn on
-      await addLogEntry(team.tableId, `Team ${team.teamName} turned on Future for 8 paydays.`);
+      team.futureCounter = 4; // Turn on
+      await addLogEntry(team.tableId, `Team ${team.teamName} turned on.`);
     }
 
     await team.save();
@@ -859,8 +859,8 @@ exports.toggleOptions = async (req, res) => {
       team.optionsCounter = 0; // Turn off
       await addLogEntry(team.tableId, `Team ${team.teamName} turned off Options.`);
     } else {
-      team.optionsCounter = 8; // Turn on
-      await addLogEntry(team.tableId, `Team ${team.teamName} turned on Options for 8 paydays.`);
+      team.optionsCounter = 4; // Turn on
+      await addLogEntry(team.tableId, `Team ${team.teamName} turned on.`);
     }
 
     await team.save();
