@@ -93,7 +93,7 @@ exports.toggleVacation = async (req, res) => {
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: 'Team not found' });
     team.isVacationOn = !!status;
-    team.vacationPaydaysLeft = status ? 8 : 0;
+    team.vacationPaydaysLeft = status ? 4 : 0;
     await team.save();
     await addLogEntry(team.tableId, `Team ${team.teamName} vacation turned ${status ? 'ON' : 'OFF'}. Tax exemption for next ${team.vacationPaydaysLeft} paydays.`);
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
@@ -188,6 +188,12 @@ exports.setMarketMode = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+// Helper for market-dependent personal loan interest
+const getMarketPersonalRate = () => {
+  if (marketMode === 'bull') return 0.07;
+  if (marketMode === 'bear') return 0.18;
+  return 0.13;
+};
 const mongoose = require('mongoose');
 const Team = require('../models/Team');
 const Deal = require('../models/Deal');
@@ -245,7 +251,7 @@ exports.handlePayday = async (req, res) => {
   }
 
   // Always reset expenses to base value before adding EMI/loan charges
-  let baseExpenses = 300000;
+  let baseExpenses = 200000;
   teamState.expenses = baseExpenses;
 
   // Vacation tax exemption logic
@@ -714,13 +720,14 @@ exports.handleBorrowLoan = async (req, res) => {
       return res.status(400).json({ message: 'Invalid loan amount.' });
     }
 
-    // Add 13% interest to borrowed amount
-  const interest = loanAmount * 0.13;
+    // Add market-dependent interest to borrowed amount
+  const rate = getMarketPersonalRate();
+  const interest = loanAmount * rate;
     const totalLoan = loanAmount + interest;
     team.personalLoan += totalLoan;
     team.cash += loanAmount;
-    // Update expenses to immediately reflect new loan interest
-    let baseExpenses = 300000;
+  // Update expenses to immediately reflect new loan interest
+  let baseExpenses = 300000;
     let emiExpenseTotal = 0;
     // Add any existing EMIs interest if needed (same as payday logic)
     if (team.smallDealEmis && Array.isArray(team.smallDealEmis)) {
@@ -737,8 +744,12 @@ exports.handleBorrowLoan = async (req, res) => {
     team.expenses = baseExpenses + emiExpenseTotal + personalLoanInterest;
     await team.save();
 
-    addLogEntry(team.tableId, `Team ${team.teamName} borrowed a loan of ${loanAmount}. 13% interest (${interest}) added. Total loan: ${totalLoan}. Expenses updated: ${team.expenses}.`);
-
+    //addLogEntry(team.tableId, `Team ${team.teamName} borrowed a loan of ${loanAmount}. 13% interest (${interest}) added. Total loan: ${totalLoan}. Expenses updated: ${team.expenses}.`);
+    // ...existing code...
+// (inside exports.handleBorrowLoan, after rate/interest/totalLoan are computed)
+const percent = (rate * 100).toFixed(0);
+await addLogEntry(team.tableId, `Team ${team.teamName} borrowed a loan of ${loanAmount}. ${percent}% interest (${interest}) added. Total loan: ${totalLoan}. Expenses updated: ${team.expenses}.`);
+// ...existing code...
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
     res.status(200).json({ teams: allTeams, logs });
@@ -784,7 +795,7 @@ exports.handleRepayLoan = async (req, res) => {
     }
     // If personal loan is fully repaid, remove 10% interest from expenses
     if (loanField === 'personalLoan' && team.personalLoan <= 0) {
-      let baseExpenses = 300000;
+  let baseExpenses = 300000;
       let emiExpenseTotal = 0;
       if (team.smallDealEmis && Array.isArray(team.smallDealEmis)) {
         team.smallDealEmis.forEach(emiObj => {

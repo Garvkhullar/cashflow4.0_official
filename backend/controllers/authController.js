@@ -6,8 +6,8 @@ exports.loginTeam = async (req, res) => {
     if (!team) {
       return res.status(401).json({ message: 'Invalid team name or code' });
     }
-    // Issue a JWT for the team (with teamId and role 'team')
-    const token = jwt.sign({ id: team._id, role: 'team' }, process.env.JWT_SECRET, { expiresIn: '2h' });
+  // Issue a JWT for the team (with teamId and role 'team') - 12 hour session
+  const token = jwt.sign({ id: team._id, role: 'team' }, process.env.JWT_SECRET, { expiresIn: '12h' });
     res.json({
       _id: team._id,
       teamName: team.teamName,
@@ -44,14 +44,19 @@ const jwt = require('jsonwebtoken');
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: '1h',
+    expiresIn: '12h',
   });
 };
 
 exports.registerTable = async (req, res) => {
-  const { username, password, role, team1Name, team2Name, team3Name } = req.body;
+  let { username, password, role, team1Name, team2Name, team3Name } = req.body;
+  // Trim whitespace from left and right for username and team names
+  username = typeof username === 'string' ? username.trim() : username;
+  team1Name = typeof team1Name === 'string' ? team1Name.trim() : team1Name;
+  team2Name = typeof team2Name === 'string' ? team2Name.trim() : team2Name;
+  team3Name = typeof team3Name === 'string' ? team3Name.trim() : team3Name;
   try {
-    const tableExists = await Table.findOne({ username });
+  const tableExists = await Table.findOne({ username });
     if (tableExists) {
       return res.status(400).json({ message: 'Table username already exists' });
     }

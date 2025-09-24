@@ -41,7 +41,11 @@ const LoginPage = ({ setAuth }) => {
         try {
             const payload = { username: loginUsername, password: loginPassword };
             const { data } = await axios.post(`${backendUrl}/auth/login`, payload);
+            // mark that the following localStorage update is legitimate
+            try { window.__allowLocalStorageUpdate = true; } catch (e) {}
             localStorage.setItem('userInfo', JSON.stringify(data));
+            // clear the flag shortly after write
+            setTimeout(() => { try { window.__allowLocalStorageUpdate = false; } catch (e) {} }, 1000);
             setAuth(data);
             showMessage("Logged in successfully!");
         } catch (error) {
@@ -54,7 +58,9 @@ const LoginPage = ({ setAuth }) => {
         try {
             const payload = { username: adminUsername, password: adminPassword };
             const { data } = await axios.post(`${backendUrl}/auth/admin-login`, payload);
+            try { window.__allowLocalStorageUpdate = true; } catch (e) {}
             localStorage.setItem('userInfo', JSON.stringify(data));
+            setTimeout(() => { try { window.__allowLocalStorageUpdate = false; } catch (e) {} }, 1000);
             setAuth(data);
             showMessage("Logged in successfully!");
         } catch (error) {

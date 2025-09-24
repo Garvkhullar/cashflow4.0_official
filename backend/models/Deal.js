@@ -5,6 +5,7 @@ const dealSchema = new mongoose.Schema({
   name: { type: String, required: true },
   cost: { type: Number, required: true },
   passiveIncome: { type: Number, required: true },
+  downPayment: { type: Number }, // Minimum buy amount required
   owners: [{
     tableId: { type: mongoose.Schema.Types.ObjectId, ref: 'Table' },
     teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
