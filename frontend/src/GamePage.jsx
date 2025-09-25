@@ -69,7 +69,7 @@ const GamePage = ({ auth, setAuth }) => {
     const [selectedDeal, setSelectedDeal] = useState(null);
     const [dealSearchText, setDealSearchText] = useState('');
     const [buyAmount, setBuyAmount] = useState('');
-    const [installments, setInstallments] = useState(3);
+    const [installments, setInstallments] = useState(4);
     const [emiPreview, setEmiPreview] = useState(null);
     const [isDealModalOpen, setIsDealModalOpen] = useState(false);
     const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
@@ -197,9 +197,9 @@ const GamePage = ({ auth, setAuth }) => {
                 if (data.mode !== marketMode) {
                     setMarketMode(data.mode);
                     if (lastMode && data.mode !== lastMode) {
-                        let label = data.mode === 'bull' ? '🐂 Bull Run (Payday +25%, Loan 7%)'
-                            : data.mode === 'bear' ? '🐻 Bear Market (Payday -25%, Loan 18%)'
-                                : 'Normal Market (Payday x1, Loan 13%)';
+                        let label = data.mode === 'bull' ? '🐂 Bull Run (Payday +25%)'
+                            : data.mode === 'bear' ? '🐻 Bear Market (Payday -25%)'
+                                : 'Normal Market (Payday x1)';
                         setMarketNotification(`Market mode changed: ${label}`);
                         setTimeout(() => setMarketNotification(''), 3000);
                     }
@@ -261,8 +261,9 @@ const GamePage = ({ auth, setAuth }) => {
             buyAmount: parseFloat(buyAmount),
             installments: parseInt(installments)
         });
-        setBuyAmount('');
-        setInstallments(3);
+    setBuyAmount('');
+    // Reset to default supported installment plan (4 paydays)
+    setInstallments(4);
         setEmiPreview(null);
     };
 
@@ -443,9 +444,9 @@ const GamePage = ({ auth, setAuth }) => {
     // required down payment for currently selected deal (0 if none or not specified)
     const requiredDownPayment = selectedDeal && selectedDeal.downPayment !== undefined && selectedDeal.downPayment !== null ? Number(selectedDeal.downPayment) : 0;
 
-    const modeDisplay = marketMode === 'bull' ? '🐂 Bull Run (Payday +25%, Loan 7%)'
-        : marketMode === 'bear' ? '🐻 Bear Market (Payday -25%, Loan 18%)'
-            : 'Normal Market (Payday x1, Loan 13%)';
+    const modeDisplay = marketMode === 'bull' ? '🐂 Bull Run (Payday +25%)'
+        : marketMode === 'bear' ? '🐻 Bear Market (Payday -25%)'
+            : 'Normal Market (Payday x1)';
 
     return (
         <div className="w-full min-h-screen block p-0 bg-black text-gray-300 overflow-x-hidden">
@@ -482,7 +483,7 @@ const GamePage = ({ auth, setAuth }) => {
                             <button onClick={() => openLoanModal('repay')} className="py-2 px-2 rounded-xl text-white font-semibold" style={{ background: '#353744' }} onMouseOver={e => e.currentTarget.style.background = '#a78bfa'} onMouseOut={e => e.currentTarget.style.background = '#353744'}>Repay Loan</button>
                             {/* Sell Crypto Modal */}
                             {isSellCryptoModalOpen && (
-                                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md relative">
                                         <button onClick={() => setIsSellCryptoModalOpen(false)} className="absolute top-2 right-2 text-gray-400 hover:text-white text-2xl font-bold focus:outline-none" title="Close">&times;</button>
                                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Crypto</h3>
@@ -530,7 +531,7 @@ const GamePage = ({ auth, setAuth }) => {
                             )}
                             {/* Sell Stocks Modal */}
                             {isSellStockModalOpen && (
-                                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md relative">
                                         <button onClick={() => setIsSellStockModalOpen(false)} className="absolute top-2 right-2 text-gray-400 hover:text-white text-2xl font-bold focus:outline-none" title="Close">&times;</button>
                                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Sell Stocks</h3>
@@ -744,7 +745,7 @@ const GamePage = ({ auth, setAuth }) => {
                                 <span className="font-medium text-xs">Personal Loan:</span>
                                 <span className="text-xs">{formatCurrency(teamState.personalLoan || 0)}</span>
                                 {teamState.personalLoan > 0 ? (
-                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="13% interest added to expenses each payday">interest included</span>
+                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="10% interest added to personal loan">interest included</span>
                                 ) : (
                                     <span className="ml-2 px-2 py-1 rounded-full bg-green-900 text-green-300 font-bold text-xs" title="No interest on personal loan">No interest</span>
                                 )}
@@ -756,7 +757,7 @@ const GamePage = ({ auth, setAuth }) => {
                                 <span className="font-medium">Expenses:</span>
                                 <span className="font-bold text-lg text-red-400">{formatCurrency(totalExpenses)}</span>
                                 {teamState.personalLoan > 0 ? (
-                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="Includes 13% interest on personal loan">+10% Total loan interest</span>
+                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="Includes 10% interest on personal loan">+10% Total loan interest</span>
                                 ) : (
                                     <span className="ml-2 px-2 py-1 rounded-full bg-green-900 text-green-300 font-bold text-xs" title="No interest on personal loan">No interest</span>
                                 )}
@@ -782,7 +783,7 @@ const GamePage = ({ auth, setAuth }) => {
             </main>
 
             {isDealModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">{dealType === 'small' ? 'Small Deal' : 'Big Deal'}</h3>
                         {/* Searchable dropdown: input with datalist so typing filters options */}
@@ -867,18 +868,22 @@ const GamePage = ({ auth, setAuth }) => {
                                 <div className="mt-4">
                                     <label className="block text-gray-300 text-sm font-bold mb-2">Installment Plan:</label>
                                     <select value={installments} onChange={e => {
-                                        setInstallments(e.target.value);
+                                        setInstallments(parseInt(e.target.value, 10));
                                         setEmiPreview(null);
                                     }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
-                                        <option value={3}>3 Paydays (5% interest)</option>
-                                        <option value={6}>6 Paydays (10% interest)</option>
-                                        <option value={12}>12 Paydays (20% interest)</option>
+                                        <option value={4}>4 Paydays (8% interest)</option>
+                                        <option value={6}>6 Paydays (14% interest)</option>
+                                        <option value={7}>7 Paydays (28% interest)</option>
                                     </select>
                                 </div>
                                 <div className="mt-4">
                                     <button type="button" className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md font-semibold disabled:bg-indigo-400 disabled:cursor-not-allowed" disabled={!buyAmount || buyAmount > selectedDeal.cost || buyAmount <= 0 || (requiredDownPayment > 0 && (isNaN(parseFloat(buyAmount)) || parseFloat(buyAmount) < requiredDownPayment))} onClick={() => {
                                         const principal = selectedDeal.cost - parseFloat(buyAmount);
-                                        let rate = installments == 3 ? 0.05 : installments == 6 ? 0.10 : 0.20;
+                                        // Match backend EMI rates: 4->8%, 6->14%, 7->28%
+                                        let rate = 0;
+                                        if (installments === 4) rate = 0.08;
+                                        else if (installments === 6) rate = 0.14;
+                                        else if (installments === 7) rate = 0.28;
                                         const interest = principal * rate;
                                         const totalLoan = principal + interest;
                                         const emi = totalLoan / installments;
@@ -916,7 +921,7 @@ const GamePage = ({ auth, setAuth }) => {
             )}
 
             {isAssetModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Buy {assetType === 'stock' ? 'Stock' : 'Crypto'}</h3>
                         <form onSubmit={(e) => {
@@ -954,7 +959,7 @@ const GamePage = ({ auth, setAuth }) => {
             )}
 
             {isLoanModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">{loanType === 'borrow' ? 'Borrow Loan' : 'Repay Loan'}</h3>
                         <form onSubmit={(e) => {
@@ -968,9 +973,9 @@ const GamePage = ({ auth, setAuth }) => {
                                 <input type="text" name="amount" inputMode="numeric" pattern="[0-9,]*" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required min="1" onChange={e => setAssetLoanAmount(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} />
                                 {loanType === 'borrow' && assetLoanAmount > 0 && (
                                     <div className="mt-2 text-xs text-blue-400">
-                                        <div>13% interest will be added to your borrowed amount.</div>
-                                        <div>Total loan: <span className="font-bold">{formatCurrency(parseFloat(assetLoanAmount) + parseFloat(assetLoanAmount) * 0.13)}</span></div>
-                                        <div>Each payday, <span className="font-bold">10%</span> of your total loan (<span className="font-bold">{formatCurrency((parseFloat(assetLoanAmount) + parseFloat(assetLoanAmount) * 0.13) * 0.10)}</span>) will be added to your expenses until fully repaid.</div>
+                                        <div>Borrowed amount will be added to your loan principal. No immediate extra interest is applied at borrow time.</div>
+                                        <div>Total loan principal: <span className="font-bold">{formatCurrency(parseFloat(assetLoanAmount))}</span></div>
+                                        <div>Each payday, <span className="font-bold">18%</span> of your outstanding personal loan will be added to your expenses until fully repaid.</div>
                                     </div>
                                 )}
                             </div>
@@ -998,7 +1003,7 @@ const GamePage = ({ auth, setAuth }) => {
             )}
             {/* Deduct/Add Cash Modal */}
             {isCashModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Deduct/Add Cash</h3>
                         <form onSubmit={handleCashUpdate}>
@@ -1035,7 +1040,7 @@ const GamePage = ({ auth, setAuth }) => {
 
             {/* Penalty Selection Dialog */}
             {isPenaltyDialogOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Penalty</h3>
                         {/* Search removed - single searchable input is below (same behavior as deals) */}
@@ -1097,7 +1102,7 @@ const GamePage = ({ auth, setAuth }) => {
 
             {/* Chance Selection Dialog */}
             {isChanceDialogOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Chance</h3>
                         {/* Search removed - single searchable input is below (same behavior as deals) */}
@@ -1154,7 +1159,7 @@ const GamePage = ({ auth, setAuth }) => {
             )}
             {/* Winner Modal */}
             {winnerTeam && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60">
+                <div className="fixed inset-0 bg-black/75 bg-opacity flex items-center justify-center z-60">
                     <div className="bg-gray-900 border border-gray-700 p-6 rounded-xl shadow-lg w-full max-w-sm text-center">
                         <h3 className="text-2xl font-bold text-white mb-4">We have a winner!</h3>
                         <p className="text-gray-200 mb-4">Team <span className="font-bold text-indigo-300">{winnerTeam.teamName}</span> has cashflow greater than expenses and wins the game.</p>
