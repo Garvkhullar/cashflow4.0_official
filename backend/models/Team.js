@@ -10,7 +10,7 @@ const teamSchema = new mongoose.Schema({
   income: { type: Number, default: 500000 },
   passiveIncome: { type: Number, default: 0 },
   assets: { type: Number, default: 0 },
-  expenses: { type: Number, default: 300000 },
+  expenses: { type: Number, default: 400000 },
   smallDealLoan: { type: Number, default: 0 },
   bigDealLoan: { type: Number, default: 0 },
   smallDealEmis: [{

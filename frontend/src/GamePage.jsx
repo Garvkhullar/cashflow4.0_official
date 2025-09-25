@@ -81,9 +81,13 @@ const GamePage = ({ auth, setAuth }) => {
     const [penalties, setPenalties] = useState([]);
     const [selectedPenaltyId, setSelectedPenaltyId] = useState('');
     const [customPenaltyAmount, setCustomPenaltyAmount] = useState('');
+    // Penalty search
+    const [penaltySearchText, setPenaltySearchText] = useState('');
     const [isChanceDialogOpen, setIsChanceDialogOpen] = useState(false);
     const [chances, setChances] = useState([]);
     const [selectedChanceId, setSelectedChanceId] = useState('');
+    // Chance search
+    const [chanceSearchText, setChanceSearchText] = useState('');
     // Market mode state
     const [marketMode, setMarketMode] = useState('normal');
     const [marketNotification, setMarketNotification] = useState('');
@@ -383,6 +387,7 @@ const GamePage = ({ auth, setAuth }) => {
     const handlePenaltyClick = (team) => {
         // Open penalty dialog and pre-fill with team's current penalty details if any
         setIsPenaltyDialogOpen(true);
+        setPenaltySearchText('');
         if (team.penalty) {
             setSelectedPenaltyId(team.penalty._id);
             setCustomPenaltyAmount(team.penalty.amount);
@@ -396,6 +401,7 @@ const GamePage = ({ auth, setAuth }) => {
         await fetchChances();
         setIsChanceDialogOpen(true);
         setSelectedChanceId('');
+        setChanceSearchText('');
     };
 
     const handleApplyPenalty = async () => {
@@ -429,6 +435,10 @@ const GamePage = ({ auth, setAuth }) => {
     // suggestions shown in the modal's dropdown. Exclude the currently selected deal
     // so the same name doesn't appear both as the input value and as the first suggestion.
     const suggestionList = (dealSearchText ? (dealsToDisplay || []).filter(d => d.name.toLowerCase().includes(dealSearchText.toLowerCase())) : (dealsToDisplay || [])).filter(d => d._id !== (selectedDeal?._id));
+
+    // Filtered lists for penalties and chances (used by the searchable dialogs)
+    const filteredPenalties = (penaltySearchText ? (penalties || []).filter(p => p.name.toLowerCase().includes(penaltySearchText.toLowerCase())) : (penalties || [])).filter(p => p._id !== (selectedPenaltyId || ''));
+    const filteredChances = (chanceSearchText ? (chances || []).filter(c => c.name.toLowerCase().includes(chanceSearchText.toLowerCase())) : (chances || [])).filter(c => c._id !== (selectedChanceId || ''));
 
     // required down payment for currently selected deal (0 if none or not specified)
     const requiredDownPayment = selectedDeal && selectedDeal.downPayment !== undefined && selectedDeal.downPayment !== null ? Number(selectedDeal.downPayment) : 0;
@@ -1028,26 +1038,53 @@ const GamePage = ({ auth, setAuth }) => {
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Penalty</h3>
+                        {/* Search removed - single searchable input is below (same behavior as deals) */}
                         <div className="mb-4">
                             <label className="block text-gray-300 text-sm font-bold mb-2">Penalty:</label>
-                            <select value={selectedPenaltyId} onChange={e => {
-                                setSelectedPenaltyId(e.target.value);
-                                setCustomPenaltyAmount('');
-                            }} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
-                                <option value="" disabled>-- Select a penalty --</option>
-                                {penalties.map(penalty => (
-                                    <option key={penalty._id} value={penalty._id}>{penalty.name} (₹{penalty.amount})</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Type to search penalties..."
+                                    value={penaltySearchText || (selectedPenaltyId ? penalties.find(p => p._id === selectedPenaltyId)?.name : '')}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setPenaltySearchText(val);
+                                        const match = penalties.find(p => p.name.toLowerCase() === val.toLowerCase());
+                                        if (match) {
+                                            setSelectedPenaltyId(match._id);
+                                        } else {
+                                            setSelectedPenaltyId('');
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md"
+                                />
+                                {(penalties && penalties.length > 0 && (penaltySearchText !== '' || !selectedPenaltyId)) && (
+                                    <div className="mt-2 max-h-40 overflow-y-auto bg-[#0f1724] border border-gray-700 rounded-md">
+                                        {filteredPenalties.map(p => (
+                                            <div key={p._id} onClick={() => {
+                                                setSelectedPenaltyId(p._id);
+                                                setPenaltySearchText(p.name);
+                                                setCustomPenaltyAmount('');
+                                            }} className="px-3 py-2 text-gray-200 hover:bg-gray-700 cursor-pointer border-b border-gray-800">
+                                                {p.name} (₹{p.amount})
+                                            </div>
+                                        ))}
+                                        {(penaltySearchText && filteredPenalties.length === 0) && (
+                                            <div className="px-3 py-2 text-gray-400">No matches</div>
+                                        )}
+                                    </div>
+                                )}
+                                {/* hidden select for accessibility */}
+                                <select className="hidden" value={selectedPenaltyId} onChange={e => setSelectedPenaltyId(e.target.value)}>
+                                    <option value="" disabled>-- Select a penalty --</option>
+                                    {penalties.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                                </select>
+                            </div>
                         </div>
                         {selectedPenaltyId && (
                             <div className="bg-gray-800 p-4 rounded-lg mb-4 text-gray-200">
                                 <p><strong>Description:</strong> {penalties.find(p => p._id === selectedPenaltyId)?.description}</p>
                                 <p><strong>Default Amount:</strong> ₹{penalties.find(p => p._id === selectedPenaltyId)?.amount}</p>
-                                {/* <div className="mt-2">
-                                    <label className="block text-gray-300 text-sm font-bold mb-2">Enter Penalty Amount:</label>
-                                    <input type="text" inputMode="numeric" pattern="[0-9,]*" min="1" className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" value={formatIndian(customPenaltyAmount || penalties.find(p => p._id === selectedPenaltyId)?.amount || '')} onChange={e => setCustomPenaltyAmount(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} />
-                                </div> */}
                             </div>
                         )}
                         <div className="flex justify-end space-x-2 mt-4">
@@ -1063,14 +1100,44 @@ const GamePage = ({ auth, setAuth }) => {
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
                     <div className="bg-gray-900 border border-gray-700 p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md">
                         <h3 className="text-2xl font-bold text-center mb-4 text-white">Select Chance</h3>
+                        {/* Search removed - single searchable input is below (same behavior as deals) */}
                         <div className="mb-4">
                             <label className="block text-gray-300 text-sm font-bold mb-2">Chance:</label>
-                            <select value={selectedChanceId} onChange={e => setSelectedChanceId(e.target.value)} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md">
-                                <option value="" disabled>-- Select a chance --</option>
-                                {chances.map(chance => (
-                                    <option key={chance._id} value={chance._id}>{chance.name} (₹{chance.amount})</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Type to search chances..."
+                                    value={chanceSearchText || (selectedChanceId ? chances.find(c => c._id === selectedChanceId)?.name : '')}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setChanceSearchText(val);
+                                        const match = chances.find(c => c.name.toLowerCase() === val.toLowerCase());
+                                        if (match) setSelectedChanceId(match._id);
+                                        else setSelectedChanceId('');
+                                    }}
+                                    className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md"
+                                />
+                                {(chances && chances.length > 0 && (chanceSearchText !== '' || !selectedChanceId)) && (
+                                    <div className="mt-2 max-h-40 overflow-y-auto bg-[#0f1724] border border-gray-700 rounded-md">
+                                        {filteredChances.map(c => (
+                                            <div key={c._id} onClick={() => {
+                                                setSelectedChanceId(c._id);
+                                                setChanceSearchText(c.name);
+                                            }} className="px-3 py-2 text-gray-200 hover:bg-gray-700 cursor-pointer border-b border-gray-800">
+                                                {c.name} (₹{c.amount})
+                                            </div>
+                                        ))}
+                                        {(chanceSearchText && filteredChances.length === 0) && (
+                                            <div className="px-3 py-2 text-gray-400">No matches</div>
+                                        )}
+                                    </div>
+                                )}
+                                {/* hidden select for accessibility */}
+                                <select className="hidden" value={selectedChanceId} onChange={e => setSelectedChanceId(e.target.value)}>
+                                    <option value="" disabled>-- Select a chance --</option>
+                                    {chances.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                </select>
+                            </div>
                         </div>
                         {selectedChanceId && (
                             <div className="bg-gray-800 p-4 rounded-lg mb-4 text-gray-200">

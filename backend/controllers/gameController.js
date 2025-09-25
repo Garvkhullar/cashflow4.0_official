@@ -251,7 +251,7 @@ exports.handlePayday = async (req, res) => {
   }
 
   // Always reset expenses to base value before adding EMI/loan charges
-  let baseExpenses = 300000;
+  let baseExpenses = 400000;
   teamState.expenses = baseExpenses;
 
   // Vacation tax exemption logic
@@ -727,7 +727,7 @@ exports.handleBorrowLoan = async (req, res) => {
     team.personalLoan += totalLoan;
     team.cash += loanAmount;
   // Update expenses to immediately reflect new loan interest
-  let baseExpenses = 300000;
+  let baseExpenses = 400000;
     let emiExpenseTotal = 0;
     // Add any existing EMIs interest if needed (same as payday logic)
     if (team.smallDealEmis && Array.isArray(team.smallDealEmis)) {
@@ -795,7 +795,7 @@ exports.handleRepayLoan = async (req, res) => {
     }
     // If personal loan is fully repaid, remove 10% interest from expenses
     if (loanField === 'personalLoan' && team.personalLoan <= 0) {
-  let baseExpenses = 300000;
+  let baseExpenses = 400000;
       let emiExpenseTotal = 0;
       if (team.smallDealEmis && Array.isArray(team.smallDealEmis)) {
         team.smallDealEmis.forEach(emiObj => {
