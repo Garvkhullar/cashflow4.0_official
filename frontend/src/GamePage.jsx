@@ -757,7 +757,7 @@ const GamePage = ({ auth, setAuth }) => {
                                 <span className="font-medium">Expenses:</span>
                                 <span className="font-bold text-lg text-red-400">{formatCurrency(totalExpenses)}</span>
                                 {teamState.personalLoan > 0 ? (
-                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="Includes 10% interest on personal loan">+10% Total loan interest</span>
+                                    <span className="ml-2 px-2 py-1 rounded-full bg-yellow-900 text-yellow-300 font-bold text-xs" title="Includes 18% interest on personal loan">includes personal loan</span>
                                 ) : (
                                     <span className="ml-2 px-2 py-1 rounded-full bg-green-900 text-green-300 font-bold text-xs" title="No interest on personal loan">No interest</span>
                                 )}
