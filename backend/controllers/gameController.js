@@ -1,7 +1,14 @@
 // Sell crypto for a team
 exports.handleSellCrypto = async (req, res) => {
   try {
-    const { teamId, name, quantity, price } = req.body;
+    const { teamId, name } = req.body;
+    // Accept quantity and price that may be strings (from the client)
+    const quantity = parseInt(req.body.quantity, 10);
+    const price = parseFloat(req.body.price);
+
+    if (isNaN(quantity) || quantity <= 0) return res.status(400).json({ message: 'Invalid quantity.' });
+    if (isNaN(price) || price <= 0) return res.status(400).json({ message: 'Invalid price.' });
+
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: 'Team not found' });
     if (team.isAssetsFrozen) {
@@ -12,20 +19,20 @@ exports.handleSellCrypto = async (req, res) => {
     if (cryptoIdx === -1) return res.status(400).json({ message: 'Crypto not found.' });
     const crypto = team.crypto[cryptoIdx];
     if (quantity > crypto.amount) return res.status(400).json({ message: 'Not enough crypto quantity to sell.' });
-    // Calculate proceeds
-    const proceeds = price * quantity;
+    // Calculate proceeds (allow decimal price)
+    const proceeds = Number((price * quantity).toFixed(2));
     // Update crypto amount or remove if all sold
     if (quantity === crypto.amount) {
       team.crypto.splice(cryptoIdx, 1);
     } else {
-      team.crypto[cryptoIdx].amount -= quantity;
+      team.crypto[cryptoIdx].amount = crypto.amount - quantity;
     }
-    // Update cash and assets
-    team.cash += proceeds;
+    // Update cash and assets (round to 2 decimals)
+    team.cash = Number((team.cash + proceeds).toFixed(2));
 
-    team.assets -= crypto.purchasePrice * quantity;
+    team.assets = Number((team.assets - crypto.purchasePrice * quantity).toFixed(2));
     if (team.assets < 0) team.assets = 0;
-    await addLogEntry(team.tableId, `Team ${team.teamName} sold ${quantity} units of ${name} crypto at ${price} each for ${proceeds}.`);
+    await addLogEntry(team.tableId, `Team ${team.teamName} sold ${quantity} units of ${name} crypto at ${price.toFixed(2)} each for ${proceeds.toFixed ? proceeds.toFixed(2) : proceeds}.`);
     await team.save();
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
@@ -38,7 +45,13 @@ exports.handleSellCrypto = async (req, res) => {
 // Sell stocks for a team
 exports.handleSellStock = async (req, res) => {
   try {
-    const { teamId, name, quantity, price } = req.body;
+    const { teamId, name } = req.body;
+    const quantity = parseInt(req.body.quantity, 10);
+    const price = parseFloat(req.body.price);
+
+    if (isNaN(quantity) || quantity <= 0) return res.status(400).json({ message: 'Invalid quantity.' });
+    if (isNaN(price) || price <= 0) return res.status(400).json({ message: 'Invalid price.' });
+
     const team = await Team.findById(teamId);
     if (!team) return res.status(404).json({ message: 'Team not found' });
     if (team.isAssetsFrozen) {
@@ -50,18 +63,18 @@ exports.handleSellStock = async (req, res) => {
     const stock = team.stocks[stockIdx];
     if (quantity > stock.amount) return res.status(400).json({ message: 'Not enough stock quantity to sell.' });
     // Calculate proceeds
-    const proceeds = price * quantity;
+    const proceeds = Number((price * quantity).toFixed(2));
     // Update stock amount or remove if all sold
     if (quantity === stock.amount) {
       team.stocks.splice(stockIdx, 1);
     } else {
-      team.stocks[stockIdx].amount -= quantity;
+      team.stocks[stockIdx].amount = stock.amount - quantity;
     }
     // Update cash and assets
-    team.cash += proceeds;
-    team.assets -= stock.purchasePrice * quantity;
+    team.cash = Number((team.cash + proceeds).toFixed(2));
+    team.assets = Number((team.assets - stock.purchasePrice * quantity).toFixed(2));
     if (team.assets < 0) team.assets = 0;
-    await addLogEntry(team.tableId, `Team ${team.teamName} sold ${quantity} units of ${name} stock at ${price} each for ${proceeds}.`);
+    await addLogEntry(team.tableId, `Team ${team.teamName} sold ${quantity} units of ${name} stock at ${price.toFixed(2)} each for ${proceeds.toFixed ? proceeds.toFixed(2) : proceeds}.`);
     await team.save();
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
@@ -331,10 +344,20 @@ exports.handlePayday = async (req, res) => {
       personalLoanInterest = teamState.personalLoan * 0.18;
     }
     teamState.expenses = baseExpenses + emiExpenseTotal + personalLoanInterest;
-  // Calculate net payday (income + passiveIncome - expenses), then apply paydayMultiplier
+  // Calculate net payday (income + passiveIncome - expenses).
+  // Apply market multiplier in a sign-aware way:
+  // - For positive net paydays, multiply by paydayMultiplier (e.g., bull 1.25 increases gains).
+  // - For negative net paydays, multiply by (2 - paydayMultiplier) so bull reduces loss magnitude (e.g., -100k -> -75k)
   const totalIncome = teamState.income + teamState.passiveIncome;
   const totalExpenses = teamState.expenses;
-  let netPaydayIncome = (totalIncome - totalExpenses) * paydayMultiplier;
+  const rawNetPayday = totalIncome - totalExpenses;
+  let netPaydayIncome;
+  if (rawNetPayday >= 0) {
+    netPaydayIncome = rawNetPayday * paydayMultiplier;
+  } else {
+    const inverseMultiplier = 2 - paydayMultiplier; // maps 1.25 -> 0.75, 0.75 -> 1.25, 1.0 -> 1.0
+    netPaydayIncome = rawNetPayday * inverseMultiplier;
+  }
   if (personalLoanInterest > 0) {
     addLogEntry(teamState.tableId, `Team ${teamState.teamName}: Personal loan interest of ${personalLoanInterest.toFixed(2)} added to expenses.`);
   }
@@ -728,7 +751,8 @@ exports.handlePenalty = async (req, res) => {
 
     const allTeams = await Team.find({ tableId: team.tableId }).populate('deals');
     const logs = await TableLog.find({ tableId: team.tableId }).sort({ timestamp: -1 });
-    res.status(200).json({ teams: allTeams, logs });
+    // Return a user-visible message so the frontend can show a penalty notification (like Chance)
+    res.status(200).json({ teams: allTeams, logs, message: `You received a Penalty: "${penalty.name}" - ₹${penaltyAmount}` });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

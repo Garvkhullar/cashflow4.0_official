@@ -506,11 +506,11 @@ const GamePage = ({ auth, setAuth }) => {
                                                     <>
                                                         <div className="mb-4">
                                                             <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.crypto[sellCryptoIndex].amount}):</label>
-                                                            <input type="text" inputMode="numeric" pattern="[0-9,]*" min="1" max={teamState.crypto[sellCryptoIndex].amount} value={formatIndian(sellCryptoQuantity)} onChange={e => setSellCryptoQuantity(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                                            <input type="text" inputMode="numeric" pattern="[0-9]*" min="1" max={teamState.crypto[sellCryptoIndex].amount} value={sellCryptoQuantity} onChange={e => setSellCryptoQuantity(e.target.value)} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                                         </div>
                                                         <div className="mb-4">
                                                             <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Crypto:</label>
-                                                            <input type="text" inputMode="decimal" pattern="[0-9.,]*" min="0" value={formatIndian(sellCryptoPrice)} onChange={e => setSellCryptoPrice(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                                            <input type="text" inputMode="decimal" pattern="[0-9.]*" min="0" value={sellCryptoPrice} onChange={e => setSellCryptoPrice(e.target.value)} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                                         </div>
                                                     </>
                                                 )}
@@ -554,11 +554,11 @@ const GamePage = ({ auth, setAuth }) => {
                                                     <>
                                                         <div className="mb-4">
                                                             <label className="block text-gray-300 text-sm font-bold mb-2">Quantity to Sell (max: {teamState.stocks[sellStockIndex].amount}):</label>
-                                                            <input type="text" inputMode="numeric" pattern="[0-9,]*" min="1" max={teamState.stocks[sellStockIndex].amount} value={formatIndian(sellQuantity)} onChange={e => setSellQuantity(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                                            <input type="text" inputMode="numeric" pattern="[0-9]*" min="1" max={teamState.stocks[sellStockIndex].amount} value={sellQuantity} onChange={e => setSellQuantity(e.target.value)} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                                         </div>
                                                         <div className="mb-4">
                                                             <label className="block text-gray-300 text-sm font-bold mb-2">Sell Price per Stock:</label>
-                                                            <input type="text" inputMode="decimal" pattern="[0-9.,]*" min="0" value={formatIndian(sellPrice)} onChange={e => setSellPrice(stripCommas(e.target.value))} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
+                                                            <input type="text" inputMode="decimal" pattern="[0-9.]*" min="0" value={sellPrice} onChange={e => setSellPrice(e.target.value)} onWheel={e => e.currentTarget.blur()} className="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md" required />
                                                         </div>
                                                     </>
                                                 )}
@@ -654,7 +654,12 @@ const GamePage = ({ auth, setAuth }) => {
                                             type="checkbox"
                                             checked={team.isVacationOn}
                                             onChange={async (e) => {
-                                                await handleAction('vacation/toggle', { status: !team.isVacationOn });
+                                                const turningOn = !team.isVacationOn;
+                                                const confirmMsg = turningOn
+                                                    ? `Are you sure you want to TURN ON Vacation for ${team.teamName}? This grants tax exemption for the next 4 paydays.`
+                                                    : `Are you sure you want to TURN OFF Vacation for ${team.teamName}? Tax will apply on future paydays.`;
+                                                if (!window.confirm(confirmMsg)) return;
+                                                await handleAction('vacation/toggle', { status: turningOn });
                                             }}
                                             className="sr-only"
                                         />
